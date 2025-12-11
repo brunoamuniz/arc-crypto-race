@@ -51,24 +51,52 @@ export function GameCanvas({ onStatsUpdate, onGameEnd, isRunning, timeLimit }: G
 
     const loadScripts = async () => {
       try {
+        console.log('[GameCanvas] Starting to load game scripts...');
+        
         // Load stats.js
+        console.log('[GameCanvas] Loading stats.js...');
         await loadScript('/game/stats.js');
+        console.log('[GameCanvas] stats.js loaded');
         
         // Load common.js
+        console.log('[GameCanvas] Loading common.js...');
         await loadScript('/game/common.js');
+        console.log('[GameCanvas] common.js loaded');
         
         // Wait a bit for scripts to initialize
         await new Promise(resolve => setTimeout(resolve, 200));
         
+        // Verify scripts are loaded
+        if (!window.Game || !window.Dom || !window.Util) {
+          console.error('[GameCanvas] Scripts loaded but Game/Dom/Util not available:', {
+            Game: !!window.Game,
+            Dom: !!window.Dom,
+            Util: !!window.Util
+          });
+          throw new Error('Game scripts did not initialize properly');
+        }
+        console.log('[GameCanvas] Game, Dom, Util are available');
+        
         // Load game wrapper
+        console.log('[GameCanvas] Loading game-wrapper.js...');
         await loadScript('/game/game-wrapper.js');
+        console.log('[GameCanvas] game-wrapper.js loaded');
         
         // Wait for wrapper to load
         await new Promise(resolve => setTimeout(resolve, 100));
         
+        // Verify gameInstance is available
+        if (!window.gameInstance) {
+          console.error('[GameCanvas] game-wrapper.js loaded but gameInstance not available');
+          throw new Error('gameInstance not created');
+        }
+        console.log('[GameCanvas] gameInstance is available');
+        
         setScriptsLoaded(true);
+        console.log('[GameCanvas] All scripts loaded successfully');
       } catch (error) {
-        console.error('Failed to load game scripts:', error);
+        console.error('[GameCanvas] Failed to load game scripts:', error);
+        // Don't set scriptsLoaded to true on error, so user can see the issue
       }
     };
 
@@ -81,6 +109,7 @@ export function GameCanvas({ onStatsUpdate, onGameEnd, isRunning, timeLimit }: G
     
     // Check if already initialized (both React state and window.gameState)
     if (gameInitialized || (window.gameState && window.gameState.isInitialized)) {
+      console.log('[GameCanvas] Game already initialized, skipping');
       return;
     }
 
@@ -88,17 +117,38 @@ export function GameCanvas({ onStatsUpdate, onGameEnd, isRunning, timeLimit }: G
     
     if (window.gameInstance) {
       try {
+        console.log('[GameCanvas] Initializing game with canvas...');
         // Double-check before calling init
         if (window.gameState && window.gameState.isInitialized) {
+          console.log('[GameCanvas] Game state already initialized');
           setGameInitialized(true);
           return;
         }
         
         window.gameInstance.init(canvas);
-        setGameInitialized(true);
+        console.log('[GameCanvas] Game init called, waiting for images to load...');
+        
+        // Wait a bit for images to load and game to initialize
+        const checkInitialized = setInterval(() => {
+          if (window.gameState && window.gameState.isInitialized) {
+            console.log('[GameCanvas] Game initialized successfully');
+            setGameInitialized(true);
+            clearInterval(checkInitialized);
+          }
+        }, 100);
+        
+        // Timeout after 5 seconds
+        setTimeout(() => {
+          clearInterval(checkInitialized);
+          if (!gameInitialized && (!window.gameState || !window.gameState.isInitialized)) {
+            console.error('[GameCanvas] Game initialization timeout - images may not have loaded');
+          }
+        }, 5000);
       } catch (error) {
-        console.error('Failed to initialize game:', error);
+        console.error('[GameCanvas] Failed to initialize game:', error);
       }
+    } else {
+      console.error('[GameCanvas] gameInstance not available when trying to initialize');
     }
   }, [scriptsLoaded, gameInitialized]);
 
@@ -214,6 +264,20 @@ export function GameCanvas({ onStatsUpdate, onGameEnd, isRunning, timeLimit }: G
           </div>
         </div>
       )}
+      {/* Debug info in development */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="absolute top-0 left-0 z-50 bg-black/80 text-white text-xs p-2 font-mono max-w-md">
+          <div>Scripts Loaded: {scriptsLoaded ? '✅' : '❌'}</div>
+          <div>Game Initialized: {gameInitialized ? '✅' : '❌'}</div>
+          <div>Game Running: {isRunning ? '✅' : '❌'}</div>
+          <div>Window.Game: {typeof window !== 'undefined' && window.Game ? '✅' : '❌'}</div>
+          <div>Window.gameInstance: {typeof window !== 'undefined' && window.gameInstance ? '✅' : '❌'}</div>
+          <div>Window.gameState: {typeof window !== 'undefined' && window.gameState ? '✅' : '❌'}</div>
+          {typeof window !== 'undefined' && window.gameState && (
+            <div>GameState.isInitialized: {window.gameState.isInitialized ? '✅' : '❌'}</div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -223,14 +287,31 @@ function loadScript(src: string): Promise<void> {
     // Check if already loaded
     const existing = document.querySelector(`script[src="${src}"]`);
     if (existing) {
+      console.log(`[loadScript] ${src} already loaded, skipping`);
       resolve();
       return;
     }
 
+    console.log(`[loadScript] Loading ${src}...`);
     const script = document.createElement('script');
     script.src = src;
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error(`Failed to load ${src}`));
+    script.onload = () => {
+      console.log(`[loadScript] ${src} loaded successfully`);
+      resolve();
+    };
+    script.onerror = (error) => {
+      console.error(`[loadScript] Failed to load ${src}:`, error);
+      // Try to get more info about the error
+      fetch(src, { method: 'HEAD' })
+        .then(response => {
+          console.error(`[loadScript] ${src} HTTP status: ${response.status} ${response.statusText}`);
+          reject(new Error(`Failed to load ${src}: HTTP ${response.status}`));
+        })
+        .catch(fetchError => {
+          console.error(`[loadScript] ${src} fetch error:`, fetchError);
+          reject(new Error(`Failed to load ${src}: ${fetchError.message}`));
+        });
+    };
     document.body.appendChild(script);
   });
 }

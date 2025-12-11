@@ -361,8 +361,25 @@ npx tsx scripts/check-tournament-entry.ts [wallet_address]
 ### Transaction Verification
 
 ```bash
-npx tsx scripts/check-transaction.ts
+npx tsx scripts/check-transaction.ts [tx_hash]
 ```
+
+### Payment and Prize Distribution Testing
+
+Comprehensive test for payment flow and prize distribution:
+
+```bash
+npx tsx scripts/test-payment-and-prize-distribution.ts [dayId]
+```
+
+This script tests:
+- Tournament entry payments (3 wallets)
+- Prize pool accumulation
+- Prize distribution (finalizeDay)
+- Balance verification before/after
+- Site fee distribution
+
+See [docs/TESTING_PAYMENT_AND_PRIZES.md](./docs/TESTING_PAYMENT_AND_PRIZES.md) for detailed guide.
 
 ## 📚 Documentation
 
@@ -371,6 +388,7 @@ All documentation is available in the [`/docs`](./docs) directory:
 - [Project Structure](./docs/PROJECT_STRUCTURE.md)
 - [Integration Guide](./docs/INTEGRATION_GUIDE.md)
 - [Testing Guide](./docs/TESTING_GUIDE.md)
+- [Testing Payment and Prizes](./docs/TESTING_PAYMENT_AND_PRIZES.md)
 - [Supabase Setup](./docs/SUPABASE_SETUP.md)
 - [USDC Address Update](./docs/USDC_ADDRESS_UPDATE.md)
 - [Quick Start](./docs/QUICK_START.md)
@@ -399,6 +417,23 @@ All documentation is available in the [`/docs`](./docs) directory:
 3. Make your changes
 4. Test thoroughly
 5. Submit a pull request
+
+## 🙏 Credits & Acknowledgments
+
+This project uses the game engine from [javascript-racer](https://github.com/jakesgordon/javascript-racer) by [jakesgordon](https://github.com/jakesgordon), an excellent Outrun-style pseudo-3D racing game implementation in HTML5 and JavaScript.
+
+The original game engine has been adapted and integrated into this Web3 application with:
+- React/Next.js integration
+- Web3 wallet connectivity
+- On-chain tournament system
+- Real-time leaderboards
+- Prize pool distribution
+
+Special thanks to jakesgordon for creating and open-sourcing the original racing game engine under the MIT license.
+
+**Original Project:**
+- Repository: [jakesgordon/javascript-racer](https://github.com/jakesgordon/javascript-racer)
+- Website: [jakesgordon.com/writing/javascript-racer/](https://jakesgordon.com/writing/javascript-racer/)
 
 ## 📄 License
 
