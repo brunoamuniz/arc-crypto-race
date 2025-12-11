@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sprite Viewer - ARC CRYPTO RACE</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Courier New', monospace;
+            background: #000;
+            color: #0ff;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: #ff0;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .controls {
+            background: #111;
+            padding: 15px;
+            border: 2px solid #0ff;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        
+        .controls label {
+            display: block;
+            margin-bottom: 10px;
+            color: #0ff;
+        }
+        
+        .controls input[type="file"] {
+            color: #0ff;
+            background: #000;
+            border: 1px solid #0ff;
+            padding: 5px;
+            border-radius: 3px;
+        }
+        
+        .canvas-container {
+            position: relative;
+            background: #222;
+            border: 2px solid #0ff;
+            padding: 10px;
+            margin-bottom: 20px;
+            overflow: auto;
+            max-height: 80vh;
+        }
+        
+        canvas {
+            display: block;
+            border: 1px solid #0ff;
+            background: #000;
+        }
+        
+        .info {
+            background: #111;
+            padding: 15px;
+            border: 2px solid #0ff;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        
+        .info h2 {
+            color: #ff0;
+            margin-bottom: 10px;
+        }
+        
+        .sprite-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .sprite-item {
+            background: #222;
+            border: 1px solid #0ff;
+            padding: 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .sprite-item:hover {
+            background: #333;
+            border-color: #ff0;
+        }
+        
+        .sprite-item.selected {
+            background: #004;
+            border-color: #ff0;
+            border-width: 2px;
+        }
+        
+        .sprite-item h3 {
+            color: #0ff;
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+        
+        .sprite-item p {
+            color: #888;
+            font-size: 10px;
+        }
+        
+        .highlight {
+            position: absolute;
+            border: 2px solid #ff0;
+            background: rgba(255, 255, 0, 0.1);
+            pointer-events: none;
+        }
+        
+        .coordinates {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            background: rgba(0, 0, 0, 0.8);
+            color: #0ff;
+            padding: 5px 10px;
+            border: 1px solid #0ff;
+            font-size: 12px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 Sprite Viewer - ARC CRYPTO RACE</h1>
+        
+        <div class="controls">
+            <label>
+                Load Spritesheet:
+                <input type="file" id="fileInput" accept="image/png">
+            </label>
+        </div>
+        
+        <div class="info">
+            <h2>📋 Sprite Definitions</h2>
+            <div class="sprite-list" id="spriteList"></div>
+        </div>
+        
+        <div class="canvas-container">
+            <div class="coordinates" id="coordinates">X: 0, Y: 0</div>
+            <canvas id="canvas"></canvas>
+            <div class="highlight" id="highlight" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        const SPRITES = {
+            PALM_TREE:              { x:    5, y:    5, w:  215, h:  540 },
+            BILLBOARD08:            { x:  230, y:    5, w:  385, h:  265 },
+            TREE1:                  { x:  625, y:    5, w:  360, h:  360 },
+            DEAD_TREE1:             { x:    5, y:  555, w:  135, h:  332 },
+            BILLBOARD09:            { x:  150, y:  555, w:  328, h:  282 },
+            BOULDER3:               { x:  230, y:  280, w:  320, h:  220 },
+            COLUMN:                 { x:  995, y:    5, w:  200, h:  315 },
+            BILLBOARD01:            { x:  625, y:  375, w:  300, h:  170 },
+            BILLBOARD06:            { x:  488, y:  555, w:  298, h:  190 },
+            BILLBOARD05:            { x:    5, y:  897, w:  298, h:  190 },
+            BILLBOARD07:            { x:  313, y:  897, w:  298, h:  190 },
+            BOULDER2:               { x:  621, y:  897, w:  298, h:  140 },
+            TREE2:                  { x: 1205, y:    5, w:  282, h:  295 },
+            BILLBOARD04:            { x: 1205, y:  310, w:  268, h:  170 },
+            DEAD_TREE2:             { x: 1205, y:  490, w:  150, h:  260 },
+            BOULDER1:               { x: 1205, y:  760, w:  168, h:  248 },
+            BUSH1:                  { x:    5, y: 1097, w:  240, h:  155 },
+            CACTUS:                 { x:  929, y:  897, w:  235, h:  118 },
+            BUSH2:                  { x:  255, y: 1097, w:  232, h:  152 },
+            BILLBOARD03:            { x:    5, y: 1262, w:  230, h:  220 },
+            BILLBOARD02:            { x:  245, y: 1262, w:  215, h:  220 },
+            STUMP:                  { x:  995, y:  330, w:  195, h:  140 },
+            SEMI:                   { x: 1365, y:  490, w:  122, h:  144 },
+            TRUCK:                  { x: 1365, y:  644, w:  100, h:   78 },
+            CAR03:                  { x: 1383, y:  760, w:   88, h:   55 },
+            CAR02:                  { x: 1383, y:  825, w:   80, h:   59 },
+            CAR04:                  { x: 1383, y:  894, w:   80, h:   57 },
+            CAR01:                  { x: 1205, y: 1018, w:   80, h:   56 },
+            PLAYER_UPHILL_LEFT:     { x: 1383, y:  961, w:   80, h:   45 },
+            PLAYER_UPHILL_STRAIGHT: { x: 1295, y: 1018, w:   80, h:   45 },
+            PLAYER_UPHILL_RIGHT:    { x: 1385, y: 1018, w:   80, h:   45 },
+            PLAYER_LEFT:            { x:  995, y:  480, w:   80, h:   41 },
+            PLAYER_STRAIGHT:        { x: 1085, y:  480, w:   80, h:   41 },
+            PLAYER_RIGHT:           { x:  995, y:  531, w:   80, h:   41 }
+        };
+
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const fileInput = document.getElementById('fileInput');
+        const spriteList = document.getElementById('spriteList');
+        const highlight = document.getElementById('highlight');
+        const coordinates = document.getElementById('coordinates');
+        let currentSprite = null;
+        let image = null;
+
+        // Create sprite list
+        function createSpriteList() {
+            spriteList.innerHTML = '';
+            Object.keys(SPRITES).forEach(name => {
+                const sprite = SPRITES[name];
+                const item = document.createElement('div');
+                item.className = 'sprite-item';
+                item.innerHTML = `
+                    <h3>${name}</h3>
+                    <p>X: ${sprite.x}, Y: ${sprite.y}</p>
+                    <p>W: ${sprite.w}, H: ${sprite.h}</p>
+                `;
+                item.addEventListener('click', () => highlightSprite(name));
+                spriteList.appendChild(item);
+            });
+        }
+
+        // Load image
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    image = new Image();
+                    image.onload = () => {
+                        canvas.width = image.width;
+                        canvas.height = image.height;
+                        ctx.drawImage(image, 0, 0);
+                        drawGrid();
+                    };
+                    image.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Draw grid
+        function drawGrid() {
+            ctx.strokeStyle = 'rgba(0, 255, 255, 0.1)';
+            ctx.lineWidth = 1;
+            
+            // Draw vertical lines every 50px
+            for (let x = 0; x < canvas.width; x += 50) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+            
+            // Draw horizontal lines every 50px
+            for (let y = 0; y < canvas.height; y += 50) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+        }
+
+        // Highlight sprite
+        function highlightSprite(name) {
+            currentSprite = name;
+            const sprite = SPRITES[name];
+            
+            // Update selected item
+            document.querySelectorAll('.sprite-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            event.target.closest('.sprite-item')?.classList.add('selected');
+            
+            // Show highlight
+            const container = canvas.parentElement;
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = rect.width / canvas.width;
+            const scaleY = rect.height / canvas.height;
+            
+            highlight.style.display = 'block';
+            highlight.style.left = (rect.left + sprite.x * scaleX) + 'px';
+            highlight.style.top = (rect.top + sprite.y * scaleY) + 'px';
+            highlight.style.width = (sprite.w * scaleX) + 'px';
+            highlight.style.height = (sprite.h * scaleY) + 'px';
+            
+            // Update coordinates
+            coordinates.textContent = `${name}: X: ${sprite.x}, Y: ${sprite.y}, W: ${sprite.w}, H: ${sprite.h}`;
+        }
+
+        // Mouse move to show coordinates
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = Math.floor((e.clientX - rect.left) * (canvas.width / rect.width));
+            const y = Math.floor((e.clientY - rect.top) * (canvas.height / rect.height));
+            
+            if (!currentSprite) {
+                coordinates.textContent = `X: ${x}, Y: ${y}`;
+            }
+        });
+
+        // Initialize
+        createSpriteList();
+    </script>
+</body>
+</html>
+
