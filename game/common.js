@@ -146,11 +146,21 @@ var Game = {  // a modified version of the game loop from my previous boulderdas
         callback(result);
     };
 
+    var onerror = function(img, name) {
+      console.error('Failed to load image:', name, 'from:', img.src);
+      // Try to continue anyway, but log the error
+      if (--count == 0)
+        callback(result);
+    };
+
     for(var n = 0 ; n < names.length ; n++) {
       var name = names[n];
       result[n] = document.createElement('img');
       Dom.on(result[n], 'load', onload);
-      result[n].src = "/game/assets/images/" + name + ".png";
+      Dom.on(result[n], 'error', function() { onerror(result[n], name); });
+      // Add cache busting for development/debugging
+      var cacheBuster = typeof window !== 'undefined' && window.location.hostname === 'localhost' ? '?v=' + Date.now() : '';
+      result[n].src = "/game/assets/images/" + name + ".png" + cacheBuster;
     }
   },
 

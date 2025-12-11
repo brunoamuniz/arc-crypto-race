@@ -6,6 +6,7 @@ import { GameCanvas } from '@/components/GameCanvas';
 import { HUDScore } from '@/components/HUDScore';
 import { PreGameOverlay } from '@/components/PreGameOverlay';
 import { EndGameOverlay } from '@/components/EndGameOverlay';
+import { UsernameModal } from '@/components/UsernameModal';
 import { Button } from '@/components/ui/button';
 import { Home, Square, Volume2, VolumeX } from 'lucide-react';
 import Link from 'next/link';
@@ -41,6 +42,9 @@ export default function GamePage() {
   const [isMounted, setIsMounted] = useState(false);
   // Initialize as null to prevent hydration mismatch, will be set after mount
   const [isMusicMuted, setIsMusicMuted] = useState<boolean | null>(null);
+  // Fallback username check (primary check is in UsernameCheckProvider)
+  const [showUsernameModal, setShowUsernameModal] = useState(false);
+  const [hasCheckedUsername, setHasCheckedUsername] = useState(false);
 
   // Define handleGameEnd with useCallback to avoid stale closures
   const handleGameEnd = useCallback(async () => {
@@ -117,6 +121,40 @@ export default function GamePage() {
       localStorage.setItem('game-muted', newMuted.toString());
     }
   };
+
+  // Fallback username check (if UsernameCheckProvider doesn't work)
+  // This runs with a longer delay to give priority to the global provider
+  useEffect(() => {
+    if (!isMounted) return;
+    if (!isConnected || !address) {
+      setHasCheckedUsername(false);
+      setShowUsernameModal(false);
+      return;
+    }
+    if (hasCheckedUsername) return; // Already checked
+    
+    // Longer delay to give priority to UsernameCheckProvider
+    const timeoutId = setTimeout(async () => {
+      try {
+        const response = await fetch(`/api/me?wallet=${encodeURIComponent(address)}`);
+        if (!response.ok) {
+          setHasCheckedUsername(true);
+          return;
+        }
+        const data = await response.json();
+        if (data.ok && !data.hasUsername) {
+          // Only show if modal isn't already showing from provider
+          setShowUsernameModal(true);
+        }
+        setHasCheckedUsername(true);
+      } catch (error) {
+        console.error('Error checking username (fallback):', error);
+        setHasCheckedUsername(true);
+      }
+    }, 2000); // 2 second delay to give priority to global provider
+    
+    return () => clearTimeout(timeoutId);
+  }, [isMounted, isConnected, address, hasCheckedUsername]);
 
   // Check tournament entry when wallet connects or component mounts
   useEffect(() => {
@@ -233,6 +271,18 @@ export default function GamePage() {
       {/* Pre-game Overlay */}
       {!gameState.isRunning && !gameState.isFinished && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm">
+          {/* Home Button - Always visible in top-left */}
+          <Link href="/" className="absolute top-4 left-4 z-[60]">
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-cyan-400/50 text-cyan-400 hover:bg-cyan-400/10 font-bold"
+            >
+              <Home className="mr-2 h-4 w-4" />
+              Home
+            </Button>
+          </Link>
+          
           <div className="text-center space-y-6 p-8 border-4 border-yellow-400 bg-black/80 rounded-lg max-w-2xl">
                     <h1 className="text-5xl font-bold text-yellow-400 neon-glow mb-4">
                       ARC CRYPTO RACE
@@ -347,6 +397,19 @@ export default function GamePage() {
             Connect your wallet to save your score to the leaderboard!
           </p>
         </div>
+      )}
+
+      {/* Fallback Username Modal (if UsernameCheckProvider doesn't work) */}
+      {isConnected && address && (
+        <UsernameModal
+          open={showUsernameModal}
+          onClose={() => setShowUsernameModal(false)}
+          onConfirm={(username) => {
+            console.log('Username confirmed (fallback):', username);
+            setShowUsernameModal(false);
+          }}
+          wallet={address}
+        />
       )}
     </div>
   );

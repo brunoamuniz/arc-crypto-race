@@ -264,20 +264,6 @@ export function GameCanvas({ onStatsUpdate, onGameEnd, isRunning, timeLimit }: G
           </div>
         </div>
       )}
-      {/* Debug info in development */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="absolute top-0 left-0 z-50 bg-black/80 text-white text-xs p-2 font-mono max-w-md">
-          <div>Scripts Loaded: {scriptsLoaded ? '✅' : '❌'}</div>
-          <div>Game Initialized: {gameInitialized ? '✅' : '❌'}</div>
-          <div>Game Running: {isRunning ? '✅' : '❌'}</div>
-          <div>Window.Game: {typeof window !== 'undefined' && window.Game ? '✅' : '❌'}</div>
-          <div>Window.gameInstance: {typeof window !== 'undefined' && window.gameInstance ? '✅' : '❌'}</div>
-          <div>Window.gameState: {typeof window !== 'undefined' && window.gameState ? '✅' : '❌'}</div>
-          {typeof window !== 'undefined' && window.gameState && (
-            <div>GameState.isInitialized: {window.gameState.isInitialized ? '✅' : '❌'}</div>
-          )}
-        </div>
-      )}
     </div>
   );
 }

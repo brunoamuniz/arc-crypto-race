@@ -8,6 +8,7 @@ interface LeaderboardEntry {
   wallet: string
   best_score: number
   updated_at: string
+  username: string | null
 }
 
 interface LeaderboardData {
@@ -158,7 +159,7 @@ export function LeaderboardTable() {
                       Rank
                     </th>
                     <th className="border-r-2 border-accent/50 p-4 text-left font-mono text-sm font-bold uppercase tracking-wider text-accent">
-                      Wallet
+                      Player
                     </th>
                     <th className="border-r-2 border-accent/50 p-4 text-left font-mono text-sm font-bold uppercase tracking-wider text-accent">
                       Score
@@ -185,7 +186,16 @@ export function LeaderboardTable() {
                           <div className="flex items-center gap-2">{getRankIcon(rank)}</div>
                         </td>
                         <td className="border-r-2 border-accent/30 p-4 font-mono text-sm text-foreground">
-                          {formatWallet(entry.wallet)}
+                          <div className="flex flex-col gap-1">
+                            {entry.username ? (
+                              <>
+                                <span className="font-bold text-primary">{entry.username}</span>
+                                <span className="text-xs text-muted-foreground">{formatWallet(entry.wallet)}</span>
+                              </>
+                            ) : (
+                              <span>{formatWallet(entry.wallet)}</span>
+                            )}
+                          </div>
                         </td>
                         <td className="border-r-2 border-accent/30 p-4">
                           <span className="font-mono text-lg font-bold text-primary drop-shadow-[0_0_10px_hsl(var(--primary)/0.5)]">
@@ -218,9 +228,24 @@ export function LeaderboardTable() {
                       </span>
                     </div>
                     <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="font-mono text-muted-foreground">Wallet:</span>
-                        <span className="font-mono text-foreground">{formatWallet(entry.wallet)}</span>
+                      <div className="flex flex-col gap-1">
+                        {entry.username ? (
+                          <>
+                            <div className="flex justify-between">
+                              <span className="font-mono text-muted-foreground">Player:</span>
+                              <span className="font-mono font-bold text-primary">{entry.username}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="font-mono text-xs text-muted-foreground">Wallet:</span>
+                              <span className="font-mono text-xs text-foreground">{formatWallet(entry.wallet)}</span>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="flex justify-between">
+                            <span className="font-mono text-muted-foreground">Wallet:</span>
+                            <span className="font-mono text-foreground">{formatWallet(entry.wallet)}</span>
+                          </div>
+                        )}
                       </div>
                       <div className="flex justify-between">
                         <span className="font-mono text-muted-foreground">Last Race:</span>

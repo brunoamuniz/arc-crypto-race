@@ -5,8 +5,26 @@
 
 /**
  * Get current day ID (UTC)
+ * Can be overridden via NEXT_PUBLIC_TEST_DAY_ID env var for testing
+ * 
+ * Usage for testing:
+ *   NEXT_PUBLIC_TEST_DAY_ID=20251213 npm run dev
  */
 export function getCurrentDayId(): number {
+  // Allow override for testing
+  // NEXT_PUBLIC_ prefix makes it available in both server and client in Next.js
+  if (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_TEST_DAY_ID) {
+    const testDayId = parseInt(process.env.NEXT_PUBLIC_TEST_DAY_ID, 10);
+    if (isValidDayId(testDayId)) {
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn(`[TEST MODE] Using test dayId: ${testDayId}`);
+      }
+      return testDayId;
+    } else if (process.env.NODE_ENV !== 'production') {
+      console.warn(`[TEST MODE] Invalid test dayId: ${process.env.NEXT_PUBLIC_TEST_DAY_ID}, using current day`);
+    }
+  }
+  
   const now = new Date();
   const year = now.getUTCFullYear();
   const month = String(now.getUTCMonth() + 1).padStart(2, '0');

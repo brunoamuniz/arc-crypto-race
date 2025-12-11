@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from '@/components/ui/button';
-import { Trophy, RotateCcw, Home, List } from 'lucide-react';
+import { Trophy, RotateCcw, Home, List, Twitter } from 'lucide-react';
 import Link from 'next/link';
 import { formatTime, calculateScore } from '@/lib/scoring';
 import type { GameStats } from '@/lib/types';
@@ -13,6 +13,24 @@ interface EndGameOverlayProps {
 
 export function EndGameOverlay({ stats, onPlayAgain }: EndGameOverlayProps) {
   const finalScore = calculateScore(stats);
+
+  const handleShareOnTwitter = () => {
+    const scoreText = finalScore.toLocaleString();
+    const distanceText = Math.round(stats.distance).toString();
+    const speedText = Math.round(stats.maxSpeed).toString();
+    
+    const shareText = 
+      'Just finished a race on ARC CRYPTO RACE! 🏎️💨\n\n' +
+      'Final Score: ' + scoreText + '\n' +
+      'Distance: ' + distanceText + 'm | Max Speed: ' + speedText + 'mph\n\n' +
+      '#ARC #DeFi #Web3 #ARCTestnet';
+    
+    const shareUrl = encodeURIComponent('https://arccryptorace.xyz');
+    const text = encodeURIComponent(shareText);
+    const twitterUrl = 'https://twitter.com/intent/tweet?text=' + text + '&url=' + shareUrl;
+    
+    window.open(twitterUrl, '_blank', 'width=550,height=420');
+  };
 
   return (
     <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-sm">
@@ -46,40 +64,48 @@ export function EndGameOverlay({ stats, onPlayAgain }: EndGameOverlayProps) {
               <div className="text-white text-2xl font-bold">{stats.crashes || 0}</div>
             </div>
           </div>
-        </div>
 
-        <div className="flex gap-4 mt-8 justify-center">
-          <Button
-            onClick={onPlayAgain}
-            size="lg"
-            className="bg-gradient-to-r from-yellow-400 to-orange-500 text-black font-bold"
-          >
-            <RotateCcw className="mr-2 h-5 w-5" />
-            Play Again
-          </Button>
-          <Link href="/">
+          {/* Action Buttons - Aligned with stats grid */}
+          <div className="grid grid-cols-2 gap-4 mt-6">
             <Button
-              size="lg"
-              variant="outline"
-              className="border-cyan-400 text-cyan-400 hover:bg-cyan-400/10"
+              onClick={handleShareOnTwitter}
+              size="default"
+              className="bg-[#1DA1F2] hover:bg-[#1a8cd8] text-white font-bold font-mono text-sm"
             >
-              <Home className="mr-2 h-5 w-5" />
-              Home
+              <Twitter className="mr-2 h-4 w-4" />
+              Share on X
             </Button>
-          </Link>
-          <Link href="/leaderboard">
             <Button
-              size="lg"
-              variant="outline"
-              className="border-purple-400 text-purple-400 hover:bg-purple-400/10"
+              onClick={onPlayAgain}
+              size="default"
+              className="bg-gradient-to-r from-yellow-400 to-orange-500 text-black font-bold font-mono text-sm"
             >
-              <List className="mr-2 h-5 w-5" />
-              Leaderboard
+              <RotateCcw className="mr-2 h-4 w-4" />
+              Play Again
             </Button>
-          </Link>
+            <Link href="/" className="w-full">
+              <Button
+                size="default"
+                variant="outline"
+                className="w-full border-cyan-400 text-cyan-400 hover:bg-cyan-400/10 font-bold font-mono text-sm"
+              >
+                <Home className="mr-2 h-4 w-4" />
+                Home
+              </Button>
+            </Link>
+            <Link href="/leaderboard" className="w-full">
+              <Button
+                size="default"
+                variant="outline"
+                className="w-full border-purple-400 text-purple-400 hover:bg-purple-400/10 font-bold font-mono text-sm"
+              >
+                <List className="mr-2 h-4 w-4" />
+                Leaderboard
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
     </div>
   );
 }
-

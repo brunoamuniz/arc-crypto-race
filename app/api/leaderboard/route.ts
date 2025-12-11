@@ -45,6 +45,31 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Get usernames for all wallets in the leaderboard
+    const wallets = (bestScores || []).map((entry: any) => entry.wallet);
+    let usernamesMap: Record<string, string | null> = {};
+
+    if (wallets.length > 0) {
+      const { data: profiles } = await supabase
+        .from('user_profiles')
+        .select('wallet, username')
+        .in('wallet', wallets);
+
+      if (profiles) {
+        profiles.forEach((profile: any) => {
+          usernamesMap[profile.wallet.toLowerCase()] = profile.username;
+        });
+      }
+    }
+
+    // Combine leaderboard with usernames
+    const leaderboardWithUsernames = (bestScores || []).map((entry: any) => ({
+      wallet: entry.wallet,
+      best_score: entry.best_score,
+      updated_at: entry.updated_at,
+      username: usernamesMap[entry.wallet.toLowerCase()] || null,
+    }));
+
     // Get commit logs for checkpoints (transparency)
     const { data: checkpoints } = await supabase
       .from('commit_logs')
@@ -58,7 +83,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       dayId,
-      leaderboard: bestScores || [],
+      leaderboard: leaderboardWithUsernames,
       checkpoints: checkpoints || [],
       // onChainWinners: onChainWinners || null,
     });

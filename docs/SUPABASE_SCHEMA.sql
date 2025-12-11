@@ -76,6 +76,23 @@ CREATE INDEX idx_commit_logs_tx_hash ON commit_logs(tx_hash);
 CREATE INDEX idx_commit_logs_created_at ON commit_logs(created_at DESC);
 
 -- ============================================
+-- Table: user_profiles
+-- Stores user usernames associated with wallets
+-- ============================================
+CREATE TABLE IF NOT EXISTS user_profiles (
+    wallet TEXT PRIMARY KEY,
+    username TEXT NOT NULL UNIQUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    CONSTRAINT user_profiles_wallet_check CHECK (wallet ~ '^0x[a-fA-F0-9]{40}$'),
+    CONSTRAINT user_profiles_username_length CHECK (char_length(username) >= 3 AND char_length(username) <= 20),
+    CONSTRAINT user_profiles_username_format CHECK (username ~ '^[a-zA-Z0-9_]+$')
+);
+
+CREATE INDEX idx_user_profiles_username ON user_profiles(username);
+CREATE INDEX idx_user_profiles_wallet ON user_profiles(wallet);
+
+-- ============================================
 -- Function: Update best score
 -- Automatically updates best_scores when a new score is inserted
 -- ============================================
@@ -121,6 +138,7 @@ ALTER TABLE scores ENABLE ROW LEVEL SECURITY;
 ALTER TABLE best_scores ENABLE ROW LEVEL SECURITY;
 ALTER TABLE pending_commits ENABLE ROW LEVEL SECURITY;
 ALTER TABLE commit_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
 
 -- Allow public read access to scores and best_scores
 CREATE POLICY "Allow public read on scores" ON scores
@@ -131,6 +149,17 @@ CREATE POLICY "Allow public read on best_scores" ON best_scores
 
 CREATE POLICY "Allow public read on commit_logs" ON commit_logs
     FOR SELECT USING (true);
+
+-- Allow public read access to user_profiles
+CREATE POLICY "Allow public read on user_profiles" ON user_profiles
+    FOR SELECT USING (true);
+
+-- Allow users to insert/update their own profile
+CREATE POLICY "Allow users to insert own profile" ON user_profiles
+    FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "Allow users to update own profile" ON user_profiles
+    FOR UPDATE USING (true);
 
 -- Allow authenticated inserts (via service role key)
 CREATE POLICY "Allow service role insert on scores" ON scores
