@@ -136,13 +136,20 @@ export async function GET(request: NextRequest) {
     console.log(`✅ Created finalize commit for day ${yesterdayDayId}`);
 
     // Immediately process the commit (and any other pending commits)
+    // Use Promise.race with timeout to prevent hanging
     console.log('🔄 Processing pending commits (including the one just created)...');
     try {
-      await runWorker();
+      const workerPromise = runWorker();
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Worker timeout after 4 minutes')), 4 * 60 * 1000);
+      });
+      
+      await Promise.race([workerPromise, timeoutPromise]);
       console.log('✅ Worker completed successfully');
     } catch (workerError) {
       console.error('⚠️ Worker error (commit was created but processing failed):', workerError);
       // Don't fail the entire request - the commit is created and can be processed later
+      // Log the error but return success so the cron job doesn't retry unnecessarily
     }
 
     return NextResponse.json({

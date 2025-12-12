@@ -231,7 +231,9 @@ async function runWorker() {
     console.log('Worker completed');
   } catch (error) {
     console.error('Worker error:', error);
-    process.exit(1);
+    // Don't use process.exit() in serverless environment (Vercel)
+    // Just throw the error so it can be handled by the caller
+    throw error;
   }
 }
 
