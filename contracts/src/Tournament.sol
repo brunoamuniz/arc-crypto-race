@@ -41,6 +41,7 @@ contract Tournament is Ownable {
         uint256 totalPool,
         uint256 siteFee
     );
+    event FundsAdded(uint256 indexed dayId, uint256 amount, uint256 newTotalPool);
     
     constructor(address _usdc, address _owner) Ownable(_owner) {
         require(_usdc != address(0), "USDC address cannot be zero");
@@ -177,6 +178,27 @@ contract Tournament is Ownable {
         returns (bytes32)
     {
         return dayInfo[dayId].checkpoints[index];
+    }
+    
+    /**
+     * @dev Add funds to a day's prize pool (owner only)
+     * @param dayId The day identifier
+     * @param amount Amount of USDC to add (in 6 decimals)
+     */
+    function addFundsToPool(uint256 dayId, uint256 amount) external onlyOwner {
+        require(amount > 0, "Amount must be greater than zero");
+        require(!dayInfo[dayId].finalized, "Day already finalized");
+        
+        // Transfer USDC from owner to contract
+        require(
+            usdc.transferFrom(owner(), address(this), amount),
+            "USDC transfer failed"
+        );
+        
+        // Add to pool
+        dayInfo[dayId].totalPool += amount;
+        
+        emit FundsAdded(dayId, amount, dayInfo[dayId].totalPool);
     }
 }
 

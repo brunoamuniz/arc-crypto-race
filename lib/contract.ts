@@ -2,7 +2,7 @@
  * Smart Contract Interaction Utilities
  */
 
-import { createPublicClient, createWalletClient, http, formatUnits } from 'viem';
+import { createPublicClient, createWalletClient, http, formatUnits, parseUnits } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { arcTestnet } from './arcChain';
 
@@ -57,6 +57,16 @@ export const TOURNAMENT_ABI = [
       { name: 'winnerScores', type: 'uint256[3]' },
     ],
     stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [
+      { name: 'dayId', type: 'uint256' },
+      { name: 'amount', type: 'uint256' },
+    ],
+    name: 'addFundsToPool',
+    outputs: [],
+    stateMutability: 'nonpayable',
     type: 'function',
   },
 ] as const;
@@ -190,6 +200,36 @@ export async function finalizeDay(
     return hash;
   } catch (error) {
     console.error('Error finalizing day:', error);
+    throw error;
+  }
+}
+
+/**
+ * Add funds to a day's prize pool (owner only)
+ */
+export async function addFundsToPool(
+  dayId: number,
+  amount: number // Amount in USDC (will be converted to 6 decimals)
+): Promise<string | null> {
+  if (!walletClient || !walletAccount || !TOURNAMENT_CONTRACT_ADDRESS) {
+    throw new Error('Wallet client or contract address not configured');
+  }
+
+  try {
+    const amountInWei = parseUnits(amount.toString(), 6); // USDC has 6 decimals
+    
+    const hash = await walletClient.writeContract({
+      account: walletAccount,
+      chain: arcTestnet,
+      address: TOURNAMENT_CONTRACT_ADDRESS as `0x${string}`,
+      abi: TOURNAMENT_ABI,
+      functionName: 'addFundsToPool',
+      args: [BigInt(dayId), amountInWei],
+    });
+
+    return hash;
+  } catch (error) {
+    console.error('Error adding funds to pool:', error);
     throw error;
   }
 }
