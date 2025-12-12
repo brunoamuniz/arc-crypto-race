@@ -43,8 +43,11 @@ export function GameCanvas({ onStatsUpdate, onGameEnd, isRunning, timeLimit }: G
   const [scriptsLoaded, setScriptsLoaded] = useState(false);
   const [gameInitialized, setGameInitialized] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
   const statsIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const startTimeRef = useRef<number>(0);
+  const initTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const initCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Load game scripts
   useEffect(() => {
@@ -95,17 +98,27 @@ export function GameCanvas({ onStatsUpdate, onGameEnd, isRunning, timeLimit }: G
         
         setScriptsLoaded(true);
         setLoadError(null);
+        setRetryCount(0);
         console.log('[GameCanvas] All scripts loaded successfully');
       } catch (error) {
         console.error('[GameCanvas] Failed to load game scripts:', error);
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         setLoadError(errorMessage);
-        // Don't set scriptsLoaded to true on error, so user can see the issue
+        
+        // Auto-retry with exponential backoff (max 3 retries)
+        if (retryCount < 3) {
+          const delay = Math.min(1000 * Math.pow(2, retryCount), 5000);
+          console.log(`[GameCanvas] Retrying in ${delay}ms (attempt ${retryCount + 1}/3)...`);
+          setTimeout(() => {
+            setRetryCount(prev => prev + 1);
+            setScriptsLoaded(false); // Reset to trigger retry
+          }, delay);
+        }
       }
     };
 
     loadScripts();
-  }, [scriptsLoaded]);
+  }, [scriptsLoaded, retryCount]);
 
   // Initialize game when scripts are loaded
   useEffect(() => {
@@ -119,6 +132,16 @@ export function GameCanvas({ onStatsUpdate, onGameEnd, isRunning, timeLimit }: G
 
     const canvas = canvasRef.current;
     
+    // Cleanup any existing intervals/timeouts
+    if (initCheckIntervalRef.current) {
+      clearInterval(initCheckIntervalRef.current);
+      initCheckIntervalRef.current = null;
+    }
+    if (initTimeoutRef.current) {
+      clearTimeout(initTimeoutRef.current);
+      initTimeoutRef.current = null;
+    }
+    
     if (window.gameInstance) {
       try {
         console.log('[GameCanvas] Initializing game with canvas...');
@@ -129,31 +152,75 @@ export function GameCanvas({ onStatsUpdate, onGameEnd, isRunning, timeLimit }: G
           return;
         }
         
+        // Ensure canvas is ready
+        if (!canvas.getContext) {
+          console.error('[GameCanvas] Canvas not ready');
+          return;
+        }
+        
         window.gameInstance.init(canvas);
         console.log('[GameCanvas] Game init called, waiting for images to load...');
         
-        // Wait a bit for images to load and game to initialize
-        const checkInitialized = setInterval(() => {
+        let checkCount = 0;
+        const maxChecks = 100; // 10 seconds total (100 * 100ms)
+        
+        // Wait for images to load and game to initialize
+        initCheckIntervalRef.current = setInterval(() => {
+          checkCount++;
+          
           if (window.gameState && window.gameState.isInitialized) {
             console.log('[GameCanvas] Game initialized successfully');
             setGameInitialized(true);
-            clearInterval(checkInitialized);
+            setLoadError(null);
+            if (initCheckIntervalRef.current) {
+              clearInterval(initCheckIntervalRef.current);
+              initCheckIntervalRef.current = null;
+            }
+            if (initTimeoutRef.current) {
+              clearTimeout(initTimeoutRef.current);
+              initTimeoutRef.current = null;
+            }
+          } else if (checkCount >= maxChecks) {
+            console.error('[GameCanvas] Game initialization timeout after 10 seconds');
+            setLoadError('Game initialization timeout. Please refresh the page.');
+            if (initCheckIntervalRef.current) {
+              clearInterval(initCheckIntervalRef.current);
+              initCheckIntervalRef.current = null;
+            }
           }
         }, 100);
         
-        // Timeout after 5 seconds
-        setTimeout(() => {
-          clearInterval(checkInitialized);
+        // Safety timeout after 10 seconds
+        initTimeoutRef.current = setTimeout(() => {
+          if (initCheckIntervalRef.current) {
+            clearInterval(initCheckIntervalRef.current);
+            initCheckIntervalRef.current = null;
+          }
           if (!gameInitialized && (!window.gameState || !window.gameState.isInitialized)) {
             console.error('[GameCanvas] Game initialization timeout - images may not have loaded');
+            setLoadError('Game initialization timeout. Try refreshing the page.');
           }
-        }, 5000);
+        }, 10000);
       } catch (error) {
         console.error('[GameCanvas] Failed to initialize game:', error);
+        setLoadError(error instanceof Error ? error.message : 'Failed to initialize game');
       }
     } else {
       console.error('[GameCanvas] gameInstance not available when trying to initialize');
+      setLoadError('Game instance not available. Please refresh the page.');
     }
+    
+    // Cleanup on unmount
+    return () => {
+      if (initCheckIntervalRef.current) {
+        clearInterval(initCheckIntervalRef.current);
+        initCheckIntervalRef.current = null;
+      }
+      if (initTimeoutRef.current) {
+        clearTimeout(initTimeoutRef.current);
+        initTimeoutRef.current = null;
+      }
+    };
   }, [scriptsLoaded, gameInitialized]);
 
   // Handle game start/stop
@@ -272,20 +339,52 @@ export function GameCanvas({ onStatsUpdate, onGameEnd, isRunning, timeLimit }: G
         }}
       />
       {(!scriptsLoaded || !gameInitialized) && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/80">
-          <div className="text-center text-white text-xl font-mono space-y-4">
+        <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-50">
+          <div className="text-center text-white text-xl font-mono space-y-4 p-8">
             {loadError ? (
               <>
-                <div className="text-red-400">❌ Error loading game</div>
-                <div className="text-sm text-gray-400">{loadError}</div>
-                <div className="text-sm text-gray-400 mt-4">
-                  Please refresh the page or check the browser console for details.
+                <div className="text-red-400 text-2xl font-bold mb-4">❌ Error loading game</div>
+                <div className="text-sm text-gray-300 mb-4">{loadError}</div>
+                <div className="flex flex-col gap-3 items-center">
+                  <button
+                    onClick={() => {
+                      setScriptsLoaded(false);
+                      setGameInitialized(false);
+                      setLoadError(null);
+                      setRetryCount(0);
+                      // Force reload scripts
+                      if (typeof window !== 'undefined') {
+                        const scripts = document.querySelectorAll('script[src^="/game/"]');
+                        scripts.forEach(script => script.remove());
+                        // Clear window objects
+                        if (window.gameInstance) delete window.gameInstance;
+                        if (window.gameState) delete window.gameState;
+                        if (window.Game) delete window.Game;
+                        if (window.Dom) delete window.Dom;
+                        if (window.Util) delete window.Util;
+                      }
+                    }}
+                    className="px-6 py-3 bg-yellow-500 hover:bg-yellow-600 text-black font-bold rounded transition-colors"
+                  >
+                    🔄 Retry Loading
+                  </button>
+                  <div className="text-xs text-gray-400 mt-2">
+                    Or refresh the page (F5 or Ctrl+R)
+                  </div>
                 </div>
               </>
             ) : !scriptsLoaded ? (
-              'Loading game scripts...'
+              <>
+                <div className="text-yellow-400 mb-2">Loading game scripts...</div>
+                {retryCount > 0 && (
+                  <div className="text-xs text-gray-400">Retry attempt {retryCount}/3</div>
+                )}
+              </>
             ) : (
-              'Initializing game...'
+              <>
+                <div className="text-cyan-400 mb-2">Initializing game...</div>
+                <div className="text-xs text-gray-400">Loading assets and setting up canvas</div>
+              </>
             )}
           </div>
         </div>
