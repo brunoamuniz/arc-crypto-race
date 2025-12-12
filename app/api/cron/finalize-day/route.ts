@@ -1,5 +1,5 @@
 /**
- * Vercel Cron Job endpoint to automatically finalize previous day
+ * Vercel Cron Job endpoint to automatically finalize previous day and process commits
  * 
  * Configure in vercel.json:
  * {
@@ -9,12 +9,17 @@
  *   }]
  * }
  * 
- * This runs at midnight UTC every day to finalize the previous day
+ * This runs at midnight UTC every day to:
+ * 1. Finalize the previous day (create finalize commit)
+ * 2. Process all pending commits (including the one just created)
+ * 
+ * Note: Combined into single cron job to respect Vercel Hobby plan limit (2 cron jobs per team)
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { getCurrentDayId, isValidDayId } from '@/lib/dayId';
+import { runWorker } from '@/scripts/worker';
 
 export const maxDuration = 300; // 5 minutes max execution time
 
@@ -130,14 +135,23 @@ export async function GET(request: NextRequest) {
 
     console.log(`✅ Created finalize commit for day ${yesterdayDayId}`);
 
+    // Immediately process the commit (and any other pending commits)
+    console.log('🔄 Processing pending commits (including the one just created)...');
+    try {
+      await runWorker();
+      console.log('✅ Worker completed successfully');
+    } catch (workerError) {
+      console.error('⚠️ Worker error (commit was created but processing failed):', workerError);
+      // Don't fail the entire request - the commit is created and can be processed later
+    }
+
     return NextResponse.json({
       ok: true,
-      message: 'Finalize commit created successfully',
+      message: 'Finalize commit created and processed',
       dayId: yesterdayDayId,
       winners,
       scores,
       commitId: commit.id,
-      note: 'Worker will process this commit in the next run',
     });
   } catch (error) {
     console.error('❌ Error in cron finalize-day:', error);

@@ -2,12 +2,11 @@
 
 ## 📋 Visão Geral
 
-Configuramos dois cron jobs no Vercel para automatizar o processo de finalização e distribuição de prêmios:
+Configuramos um único cron job no Vercel para automatizar o processo de finalização e distribuição de prêmios:
 
 1. **Finalize Day** (`/api/cron/finalize-day`) - Executa à meia-noite UTC todos os dias
-2. **Worker** (`/api/cron/worker`) - Executa às 00:05 UTC todos os dias (5 minutos após finalização)
 
-**Nota**: Configurado para plano Hobby do Vercel (limite de 1 execução por dia por cron job).
+**Nota**: Usamos apenas 1 cron job para respeitar o limite do plano Hobby (2 cron jobs por time no total). O endpoint faz ambas as tarefas: cria o commit de finalização e imediatamente processa todos os commits pendentes.
 
 ---
 
@@ -18,13 +17,9 @@ Configuramos dois cron jobs no Vercel para automatizar o processo de finalizaç�
   ↓
 /api/cron/finalize-day
   ↓
-Cria commit de finalização para o dia anterior
+1. Cria commit de finalização para o dia anterior
   ↓
-00:05 UTC (5 minutos depois)
-  ↓
-/api/cron/worker
-  ↓
-Processa commits pendentes
+2. Imediatamente processa commits pendentes (incluindo o recém-criado)
   ↓
 Chama contrato para distribuir prêmios
 ```
@@ -34,23 +29,19 @@ Chama contrato para distribuir prêmios
 ## 📁 Arquivos Criados
 
 ### 1. `vercel.json`
-Configuração dos cron jobs:
+Configuração do cron job:
 ```json
 {
   "crons": [
     {
       "path": "/api/cron/finalize-day",
       "schedule": "0 0 * * *"
-    },
-    {
-      "path": "/api/cron/worker",
-      "schedule": "0 5 * * *"
     }
   ]
 }
 ```
 
-**Nota**: Ambos os cron jobs rodam uma vez por dia para respeitar o limite do plano Hobby do Vercel.
+**Nota**: Usamos apenas 1 cron job que executa ambas as tarefas (finalizar e processar) para respeitar o limite do plano Hobby (2 cron jobs por time no total).
 
 ### 2. `app/api/cron/worker/route.ts`
 Endpoint que executa o worker para processar commits pendentes.
@@ -68,9 +59,8 @@ O arquivo `vercel.json` já está configurado. Após o deploy, os cron jobs ser�
 ### Passo 2: Verificar Cron Jobs
 1. Acesse o dashboard do Vercel
 2. Vá em **Settings** → **Cron Jobs**
-3. Você deve ver dois cron jobs:
-   - `finalize-day` - Executa à meia-noite UTC (00:00)
-   - `worker` - Executa às 00:05 UTC (5 minutos após finalização)
+3. Você deve ver um cron job:
+   - `finalize-day` - Executa à meia-noite UTC (00:00) e faz tudo: cria commit de finalização e processa commits pendentes
 
 ### Passo 3: Variáveis de Ambiente
 Certifique-se de que as seguintes variáveis estão configuradas no Vercel:
@@ -111,32 +101,25 @@ Se você definir `CRON_SECRET` nas variáveis de ambiente, os endpoints verifica
 
 ## 🧪 Testar Localmente
 
-### Testar Worker
-```bash
-curl http://localhost:3000/api/cron/worker
-```
-
-### Testar Finalize Day
+### Testar Finalize Day (faz tudo: finalizar + processar)
 ```bash
 curl http://localhost:3000/api/cron/finalize-day
 ```
 
-**Nota**: Localmente, os cron jobs não executam automaticamente. Você precisa chamar os endpoints manualmente ou usar uma ferramenta como `cron` do sistema.
+**Nota**: Localmente, o cron job não executa automaticamente. Você precisa chamar o endpoint manualmente ou usar uma ferramenta como `cron` do sistema.
 
 ---
 
 ## ⏰ Horários
 
-### Finalize Day
+### Finalize Day (Único Cron Job)
 - **Frequência**: Uma vez por dia
 - **Schedule**: `0 0 * * *` (meia-noite UTC)
-- **Função**: Cria commit de finalização para o dia anterior
-
-### Worker
-- **Frequência**: Uma vez por dia
-- **Schedule**: `0 5 * * *` (00:05 UTC, 5 minutos após finalização)
-- **Função**: Processa commits pendentes (checkpoints e finalizações)
-- **Nota**: Configurado para rodar após a finalização para respeitar o limite do plano Hobby
+- **Funções**:
+  1. Cria commit de finalização para o dia anterior
+  2. Imediatamente processa todos os commits pendentes (incluindo o recém-criado)
+  3. Chama o contrato para distribuir prêmios
+- **Nota**: Combina ambas as tarefas em um único cron job para respeitar o limite do plano Hobby (2 cron jobs por time no total)
 
 ---
 
@@ -163,19 +146,19 @@ curl http://localhost:3000/api/cron/finalize-day
 
 ## 📝 Notas Importantes
 
-1. **Timezone**: Os cron jobs usam UTC. Ajuste o schedule se necessário.
-2. **Duração**: Cada cron job tem `maxDuration: 300` (5 minutos)
-3. **Plano Hobby**: Limite de 1 execução por dia por cron job. Por isso, ambos os cron jobs rodam apenas uma vez por dia.
-4. **Timing**: O worker roda 5 minutos após a finalização para garantir que o commit de finalização seja processado.
+1. **Timezone**: O cron job usa UTC. Ajuste o schedule se necessário.
+2. **Duração**: O cron job tem `maxDuration: 300` (5 minutos)
+3. **Plano Hobby**: Limite de 2 cron jobs por time no total. Por isso, usamos apenas 1 cron job que faz tudo.
+4. **Processamento**: O commit de finalização é criado e imediatamente processado na mesma execução.
 5. **Custos**: Cron jobs são gratuitos no plano Hobby, mas há limites de execução.
 
 ---
 
 ## ✅ Checklist de Configuração
 
-- [ ] `vercel.json` criado e commitado
+- [ ] `vercel.json` criado e commitado (com apenas 1 cron job)
 - [ ] Deploy feito no Vercel
-- [ ] Cron jobs aparecem no dashboard
+- [ ] Cron job aparece no dashboard
 - [ ] Variáveis de ambiente configuradas
 - [ ] Testado manualmente (curl)
 - [ ] Verificado logs após primeira execução
