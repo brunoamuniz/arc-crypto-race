@@ -60,3 +60,4 @@ O arquivo `car05.png` já está em:
 - `/public/game/assets/sprites/car05.png` (produção)
 
 Mas precisa ser adicionado ao sprite sheet `sprites.png` para funcionar no jogo.
+

@@ -163,3 +163,4 @@ SPRITES.CARS = [
 - Definições de sprites: `/public/game/common.js` (linha ~400)
 - Lista de carros: `/public/game/common.js` (linha 423)
 - Lógica de spawn: `/public/game/game-wrapper.js` (função `resetCars`)
+
