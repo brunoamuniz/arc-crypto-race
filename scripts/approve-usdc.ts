@@ -26,6 +26,10 @@ if (!TOURNAMENT_CONTRACT_ADDRESS) {
   process.exit(1);
 }
 
+// TypeScript: After checks above, these are guaranteed to be defined
+const privateKey: string = PRIVATE_KEY;
+const tournamentContractAddress: string = TOURNAMENT_CONTRACT_ADDRESS;
+
 // USDC ABI (ERC20 approve function)
 const USDC_ABI = [
   {
@@ -51,7 +55,7 @@ async function approveUSDC(amount: number) {
   console.log(`\n🔐 Approving ${amount} USDC for tournament contract\n`);
   console.log('='.repeat(60));
 
-  const account = privateKeyToAccount(`0x${PRIVATE_KEY.replace('0x', '')}` as `0x${string}`);
+  const account = privateKeyToAccount(`0x${privateKey.replace('0x', '')}` as `0x${string}`);
   const walletClient = createWalletClient({
     account,
     chain: arcTestnet,
@@ -64,7 +68,7 @@ async function approveUSDC(amount: number) {
   });
 
   console.log(`Owner Address: ${account.address}`);
-  console.log(`Contract Address: ${TOURNAMENT_CONTRACT_ADDRESS}`);
+  console.log(`Contract Address: ${tournamentContractAddress}`);
   console.log(`USDC Address: ${USDC_ADDRESS}`);
   console.log('');
 
@@ -94,7 +98,7 @@ async function approveUSDC(amount: number) {
       address: USDC_ADDRESS as `0x${string}`,
       abi: USDC_ABI,
       functionName: 'approve',
-      args: [TOURNAMENT_CONTRACT_ADDRESS as `0x${string}`, amountInWei],
+      args: [tournamentContractAddress as `0x${string}`, amountInWei],
     });
 
     console.log(`\n✅ Approval transaction sent!`);
