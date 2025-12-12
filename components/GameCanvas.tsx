@@ -42,6 +42,7 @@ export function GameCanvas({ onStatsUpdate, onGameEnd, isRunning, timeLimit }: G
   const containerRef = useRef<HTMLDivElement>(null);
   const [scriptsLoaded, setScriptsLoaded] = useState(false);
   const [gameInitialized, setGameInitialized] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const statsIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const startTimeRef = useRef<number>(0);
 
@@ -93,9 +94,12 @@ export function GameCanvas({ onStatsUpdate, onGameEnd, isRunning, timeLimit }: G
         console.log('[GameCanvas] gameInstance is available');
         
         setScriptsLoaded(true);
+        setLoadError(null);
         console.log('[GameCanvas] All scripts loaded successfully');
       } catch (error) {
         console.error('[GameCanvas] Failed to load game scripts:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        setLoadError(errorMessage);
         // Don't set scriptsLoaded to true on error, so user can see the issue
       }
     };
@@ -259,8 +263,20 @@ export function GameCanvas({ onStatsUpdate, onGameEnd, isRunning, timeLimit }: G
       />
       {(!scriptsLoaded || !gameInitialized) && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/80">
-          <div className="text-white text-xl font-mono">
-            {!scriptsLoaded ? 'Loading game scripts...' : 'Initializing game...'}
+          <div className="text-center text-white text-xl font-mono space-y-4">
+            {loadError ? (
+              <>
+                <div className="text-red-400">❌ Error loading game</div>
+                <div className="text-sm text-gray-400">{loadError}</div>
+                <div className="text-sm text-gray-400 mt-4">
+                  Please refresh the page or check the browser console for details.
+                </div>
+              </>
+            ) : !scriptsLoaded ? (
+              'Loading game scripts...'
+            ) : (
+              'Initializing game...'
+            )}
           </div>
         </div>
       )}
@@ -281,23 +297,38 @@ function loadScript(src: string): Promise<void> {
     console.log(`[loadScript] Loading ${src}...`);
     const script = document.createElement('script');
     script.src = src;
+    script.type = 'text/javascript';
+    script.async = false; // Load scripts sequentially
+    script.defer = false;
+    
+    // Add timeout to prevent hanging
+    const timeout = setTimeout(() => {
+      console.error(`[loadScript] Timeout loading ${src} after 30 seconds`);
+      script.remove();
+      reject(new Error(`Timeout loading ${src} after 30 seconds`));
+    }, 30000);
+    
     script.onload = () => {
+      clearTimeout(timeout);
       console.log(`[loadScript] ${src} loaded successfully`);
       resolve();
     };
     script.onerror = (error) => {
-      console.error(`[loadScript] Failed to load ${src}:`, error);
+      clearTimeout(timeout);
+      console.error(`[loadScript] Script onerror event for ${src}:`, error);
+      script.remove();
       // Try to get more info about the error
-      fetch(src, { method: 'HEAD' })
+      fetch(src, { method: 'HEAD', cache: 'no-cache' })
         .then(response => {
           console.error(`[loadScript] ${src} HTTP status: ${response.status} ${response.statusText}`);
-          reject(new Error(`Failed to load ${src}: HTTP ${response.status}`));
+          console.error(`[loadScript] ${src} Content-Type: ${response.headers.get('content-type')}`);
+          reject(new Error(`Failed to load ${src}: HTTP ${response.status} ${response.statusText}`));
         })
         .catch(fetchError => {
           console.error(`[loadScript] ${src} fetch error:`, fetchError);
-          reject(new Error(`Failed to load ${src}: ${fetchError.message}`));
+          reject(new Error(`Failed to load ${src}: ${fetchError.message || 'Network error'}`));
         });
     };
-    document.body.appendChild(script);
+    document.head.appendChild(script); // Use head instead of body for better compatibility
   });
 }
