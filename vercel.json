@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/worker",
+      "schedule": "*/10 * * * *"
+    },
+    {
+      "path": "/api/cron/finalize-day",
+      "schedule": "0 0 * * *"
+    }
+  ]
+}
