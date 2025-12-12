@@ -13,7 +13,7 @@ export function AboutSection() {
   }, [])
 
   const shareText = encodeURIComponent(
-    "Just joined ARC CRYPTO RACE! 🏎️\nRacing for real USDC prizes on @ARC Testnet.\nJoin the ultimate Web3 racing tournament! 🚀\n\n#ARC #DeFi #Web3 #ARCTestnet",
+    "Just joined ARC CRYPTO RACE! 🏎️\nRacing for USDC (FAUCET) prizes on @ARC Testnet.\nJoin the ultimate Web3 racing tournament! 🚀\n\n#ARC #DeFi #Web3 #ARCTestnet",
   )
 
   return (
@@ -29,7 +29,7 @@ export function AboutSection() {
           </p>
 
           <p className="text-foreground">
-            PAY 5 USDC TO ENTER THE DAILY TOURNAMENT. RACE FOR 5 MINUTES AND SET THE HIGHEST SCORE. THE TOP 3 PLAYERS
+            PAY 5 USDC (FAUCET) TO ENTER THE DAILY TOURNAMENT. RACE FOR 5 MINUTES AND SET THE HIGHEST SCORE. THE TOP 3 PLAYERS
             WIN THE PRIZE POOL!
           </p>
 

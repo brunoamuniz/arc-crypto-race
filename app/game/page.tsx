@@ -322,7 +322,7 @@ export default function GamePage() {
                     ) : (
                       <>
                         <div className="bg-yellow-500/20 border border-yellow-400 text-yellow-400 p-4 rounded mb-4">
-                          ⚠️ You must enter the tournament to play (5 USDC)
+                          ⚠️ You must enter the tournament to play (5 USDC (FAUCET))
                         </div>
                         <EnterTournamentButton
                           onEntered={() => {

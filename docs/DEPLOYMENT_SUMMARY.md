@@ -188,3 +188,4 @@ Se encontrar problemas:
 2. Verifique variáveis de ambiente
 3. Verifique se o contrato está deployado
 4. Consulte a documentação em `docs/`
+

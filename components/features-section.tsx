@@ -11,7 +11,7 @@ export function FeaturesSection() {
     {
       icon: Zap,
       title: "CRYPTO TOURNAMENTS",
-      description: "Daily competitions powered by Web3 with instant USDC prize distribution",
+      description: "Daily competitions powered by Web3 with instant USDC (FAUCET) prize distribution",
       color: "var(--racing-yellow)",
     },
     {

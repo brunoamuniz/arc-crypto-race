@@ -62,7 +62,7 @@ export function PrizePoolSection() {
   const thirdPlace = prizePool * 0.15
 
   const shareText = encodeURIComponent(
-    `The ARC CRYPTO RACE prize pool is at $${prizeAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDC! 💰\nRace with me and win big on @ARC Testnet! 🏎️🔥\n\n#ARC #DeFi #Web3 #ARCTestnet`,
+    `The ARC CRYPTO RACE prize pool is at $${prizeAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDC (FAUCET)! 💰\nRace with me and win big on @ARC Testnet! 🏎️🔥\n\n#ARC #DeFi #Web3 #ARCTestnet`,
   )
 
   return (
@@ -73,7 +73,7 @@ export function PrizePoolSection() {
         </h2>
 
         <p className="text-center text-sm font-mono mb-12" style={{ color: "var(--neon-blue)" }}>
-          ENTRY FEE: 5 USDC (ARC TESTNET)
+          ENTRY FEE: 5 USDC (FAUCET) (ARC TESTNET)
         </p>
 
         <div

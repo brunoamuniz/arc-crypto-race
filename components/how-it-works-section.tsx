@@ -11,8 +11,8 @@ export function HowItWorksSection() {
     },
     {
       icon: DollarSign,
-      title: "DEPOSIT 5 USDC",
-      description: "Pay 5 USDC (testnet) to enter the daily tournament",
+      title: "DEPOSIT 5 USDC (FAUCET)",
+      description: "Pay 5 USDC (FAUCET) (testnet) to enter the daily tournament",
       color: "var(--racing-yellow)",
     },
     {

@@ -39,7 +39,7 @@ export function Footer() {
   ]
 
   const shareText = encodeURIComponent(
-    "Just joined ARC CRYPTO RACE! 🏎️\nRacing for real USDC prizes on @ARC Testnet.\nJoin the ultimate Web3 racing tournament! 🚀\n\n#ARC #DeFi #Web3 #ARCTestnet",
+    "Just joined ARC CRYPTO RACE! 🏎️\nRacing for USDC (FAUCET) prizes on @ARC Testnet.\nJoin the ultimate Web3 racing tournament! 🚀\n\n#ARC #DeFi #Web3 #ARCTestnet",
   )
 
   return (

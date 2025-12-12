@@ -19,7 +19,7 @@ export function LeaderboardInfo() {
             <Coins className="h-5 w-5 text-accent" />
             <div>
               <div className="font-mono text-xs text-muted-foreground">Entry Fee</div>
-              <div className="font-mono text-sm font-bold text-foreground">5 USDC</div>
+              <div className="font-mono text-sm font-bold text-foreground">5 USDC (FAUCET)</div>
             </div>
           </div>
 

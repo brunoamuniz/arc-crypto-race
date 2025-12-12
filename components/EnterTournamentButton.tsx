@@ -504,7 +504,7 @@ export function EnterTournamentButton({ onEntered }: EnterTournamentButtonProps)
     if (isApproving || isApprovingTx) return 'Approving USDC...';
     if (isEntering || isEnteringTx) return 'Entering Tournament...';
     if (needsApproval && !isApprovalSuccess) return 'Waiting for approval...';
-    return 'Enter Tournament (5 USDC)';
+    return 'Enter Tournament (5 USDC (FAUCET))';
   };
 
   return (
@@ -534,7 +534,7 @@ export function EnterTournamentButton({ onEntered }: EnterTournamentButtonProps)
         ) : (
           <>
             <Trophy className="mr-2 h-6 w-6" />
-            Enter Tournament (5 USDC)
+            Enter Tournament (5 USDC (FAUCET))
           </>
         )}
       </Button>
