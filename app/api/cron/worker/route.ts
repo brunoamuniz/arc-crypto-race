@@ -5,9 +5,12 @@
  * {
  *   "crons": [{
  *     "path": "/api/cron/worker",
- *     "schedule": "*/10 * * * *"
+ *     "schedule": "0 5 * * *"
  *   }]
  * }
+ * 
+ * Note: Runs once per day at 00:05 UTC (5 minutes after finalize-day)
+ * This respects Vercel Hobby plan limit of 1 execution per day per cron job.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
