@@ -245,6 +245,11 @@ export function GameCanvas({ onStatsUpdate, onGameEnd, isRunning, timeLimit }: G
       return;
     }
 
+    // Track previous values to detect anomalies
+    let previousMaxSpeed = 0;
+    let previousDistance = 0;
+    let previousScore = 0;
+    
     statsIntervalRef.current = setInterval(() => {
       if (!window.gameState) return;
 
@@ -256,6 +261,55 @@ export function GameCanvas({ onStatsUpdate, onGameEnd, isRunning, timeLimit }: G
         currentSpeed: window.gameState.speed,
         position: window.gameState.position,
       };
+
+      // Calculate current score for logging
+      const currentScore = stats.distance * 10 + stats.maxSpeed * 2 - stats.elapsedTime * 5 - (stats.crashes ?? 0) * 100;
+      
+      // Detect score drops (more than 10% decrease)
+      if (previousScore > 0 && currentScore < previousScore * 0.9) {
+        console.warn('[GameCanvas] ⚠️ SCORE DROP DETECTED!', {
+          previousScore: Math.floor(previousScore),
+          currentScore: Math.floor(currentScore),
+          drop: Math.floor(previousScore - currentScore),
+          stats: {
+            distance: stats.distance.toFixed(2),
+            maxSpeed: stats.maxSpeed.toFixed(2),
+            elapsedTime: stats.elapsedTime.toFixed(2),
+            crashes: stats.crashes,
+            previousMaxSpeed: previousMaxSpeed.toFixed(2),
+            previousDistance: previousDistance.toFixed(2),
+          },
+          gameState: {
+            position: window.gameState.position?.toFixed(2),
+            speed: window.gameState.speed?.toFixed(2),
+            maxSpeed: window.gameState.maxSpeed?.toFixed(2),
+            totalGameTime: window.gameState.totalGameTime?.toFixed(2),
+            crashes: window.gameState.crashes,
+          }
+        });
+      }
+      
+      // Detect maxSpeed reset
+      if (previousMaxSpeed > 0 && stats.maxSpeed < previousMaxSpeed * 0.5) {
+        console.error('[GameCanvas] ❌ MAXSPEED RESET DETECTED!', {
+          previousMaxSpeed: previousMaxSpeed.toFixed(2),
+          currentMaxSpeed: stats.maxSpeed.toFixed(2),
+          gameStateMaxSpeed: window.gameState.maxSpeed?.toFixed(2),
+        });
+      }
+      
+      // Detect distance reset
+      if (previousDistance > 0 && stats.distance < previousDistance * 0.5) {
+        console.error('[GameCanvas] ❌ DISTANCE RESET DETECTED!', {
+          previousDistance: previousDistance.toFixed(2),
+          currentDistance: stats.distance.toFixed(2),
+          gameStatePosition: window.gameState.position?.toFixed(2),
+        });
+      }
+
+      previousMaxSpeed = stats.maxSpeed;
+      previousDistance = stats.distance;
+      previousScore = currentScore;
 
       onStatsUpdate(stats);
 

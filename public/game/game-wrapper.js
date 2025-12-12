@@ -228,7 +228,22 @@
       // Update exposed state
       window.gameState.position = this.position;
       window.gameState.speed = this.speed;
-      window.gameState.maxSpeed = Math.max(window.gameState.maxSpeed, this.speed);
+      // CRITICAL: Only update maxSpeed if it's increasing, never reset it during gameplay
+      // This prevents score drops from maxSpeed being reset
+      var previousMaxSpeed = window.gameState.maxSpeed || 0;
+      window.gameState.maxSpeed = Math.max(previousMaxSpeed, this.speed);
+      
+      // Log if maxSpeed was incorrectly reset
+      if (previousMaxSpeed > 0 && window.gameState.maxSpeed < previousMaxSpeed * 0.5) {
+        console.error('[game-wrapper] ⚠️ maxSpeed drop detected!', {
+          previous: previousMaxSpeed.toFixed(2),
+          current: window.gameState.maxSpeed.toFixed(2),
+          speed: this.speed.toFixed(2)
+        });
+        // Restore previous maxSpeed if it was incorrectly reset
+        window.gameState.maxSpeed = previousMaxSpeed;
+      }
+      
       window.gameState.totalGameTime = this.totalGameTime;
       window.gameState.playerX = this.playerX;
       window.gameState.trackLength = this.trackLength || 0;
@@ -553,7 +568,13 @@
         this.totalCars = this.baseTotalCars;
         window.gameState.totalGameTime = 0;
         window.gameState.crashes = 0;
-        window.gameState.maxSpeed = 0;
+        // CRITICAL FIX: Only reset maxSpeed if game is not running
+        // This prevents score drops during active gameplay
+        if (!window.gameState.isRunning) {
+          window.gameState.maxSpeed = 0;
+        } else {
+          console.warn('[game-wrapper] ⚠️ Attempted to reset maxSpeed during gameplay - preserving value');
+        }
       }
 
       if ((this.segments.length == 0) || options.segmentLength || options.rumbleLength) {
@@ -616,6 +637,7 @@
       
       window.gameState.position = 0;
       window.gameState.speed = 0;
+      // Only reset maxSpeed when explicitly resetting (game stopped)
       window.gameState.maxSpeed = 0;
       window.gameState.crashes = 0;
       window.gameState.totalGameTime = 0;
