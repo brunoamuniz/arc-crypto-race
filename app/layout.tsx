@@ -17,15 +17,6 @@ export const metadata: Metadata = {
   alternates: {
     canonical: '/',
   },
-  icons: {
-    icon: [
-      { url: '/icon.svg', type: 'image/svg+xml', sizes: 'any' },
-      { url: '/icon-dark-32x32.png', type: 'image/png', media: '(prefers-color-scheme: dark)' },
-      { url: '/icon-light-32x32.png', type: 'image/png', media: '(prefers-color-scheme: light)' },
-    ],
-    shortcut: '/icon.svg',
-    apple: '/apple-icon.png',
-  },
   openGraph: {
     type: 'website',
     locale: 'en_US',
@@ -74,7 +65,8 @@ export default function RootLayout({
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/icon.svg" type="image/svg+xml" />
-        <link rel="shortcut icon" href="/icon.svg" type="image/svg+xml" />
+        <link rel="alternate icon" href="/icon.svg" />
+        <link rel="apple-touch-icon" href="/icon.svg" />
       </head>
       <body className="antialiased">
         <AppWagmiProvider>
