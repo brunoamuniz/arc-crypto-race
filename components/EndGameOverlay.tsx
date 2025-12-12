@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from '@/components/ui/button';
-import { Trophy, RotateCcw, Home, List, Twitter } from 'lucide-react';
+import { Trophy, RotateCcw, Home, List, Twitter, Gamepad2 } from 'lucide-react';
 import Link from 'next/link';
 import { formatTime, calculateScore } from '@/lib/scoring';
 import type { GameStats } from '@/lib/types';
@@ -9,9 +9,10 @@ import type { GameStats } from '@/lib/types';
 interface EndGameOverlayProps {
   stats: GameStats;
   onPlayAgain: () => void;
+  isDemoMode?: boolean;
 }
 
-export function EndGameOverlay({ stats, onPlayAgain }: EndGameOverlayProps) {
+export function EndGameOverlay({ stats, onPlayAgain, isDemoMode = false }: EndGameOverlayProps) {
   const finalScore = calculateScore(stats);
 
   const handleShareOnTwitter = () => {
@@ -40,10 +41,35 @@ export function EndGameOverlay({ stats, onPlayAgain }: EndGameOverlayProps) {
           RACE FINISHED!
         </h1>
         
+        {isDemoMode && (
+          <div className="bg-blue-500/20 border-2 border-blue-400 text-blue-300 p-4 rounded mb-4">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <Gamepad2 className="h-5 w-5" />
+              <span className="font-bold">DEMO MODE</span>
+            </div>
+            <p className="text-sm font-mono">
+              This was a practice run. Your score was not saved to the leaderboard.
+              <br />
+              Connect your wallet and enter the tournament to compete for prizes!
+            </p>
+          </div>
+        )}
+        
         <div className="space-y-4 mt-8">
-          <div className="bg-gradient-to-r from-yellow-400/20 to-orange-500/20 p-6 rounded border-2 border-yellow-400">
-            <div className="text-yellow-400 text-sm font-mono mb-2">FINAL SCORE</div>
+          <div className={`p-6 rounded border-2 ${
+            isDemoMode 
+              ? 'bg-gradient-to-r from-blue-400/20 to-cyan-500/20 border-blue-400' 
+              : 'bg-gradient-to-r from-yellow-400/20 to-orange-500/20 border-yellow-400'
+          }`}>
+            <div className={`text-sm font-mono mb-2 ${isDemoMode ? 'text-blue-400' : 'text-yellow-400'}`}>
+              {isDemoMode ? 'PRACTICE SCORE' : 'FINAL SCORE'}
+            </div>
             <div className="text-6xl font-bold text-white">{finalScore.toLocaleString()}</div>
+            {isDemoMode && (
+              <div className="text-xs text-blue-300 font-mono mt-2">
+                (Not saved to leaderboard)
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4 mt-6">

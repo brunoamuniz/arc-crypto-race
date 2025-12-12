@@ -45,6 +45,8 @@ export default function GamePage() {
   // Fallback username check (primary check is in UsernameCheckProvider)
   const [showUsernameModal, setShowUsernameModal] = useState(false);
   const [hasCheckedUsername, setHasCheckedUsername] = useState(false);
+  // Demo mode - allows playing without wallet connection
+  const [isDemoMode, setIsDemoMode] = useState(false);
 
   // Define handleGameEnd with useCallback to avoid stale closures
   const handleGameEnd = useCallback(async () => {
@@ -55,8 +57,8 @@ export default function GamePage() {
       endTime: Date.now(),
     }));
 
-    // Submit score to backend
-    if (isConnected && address) {
+    // Submit score to backend ONLY if in tournament mode (not demo)
+    if (!isDemoMode && isConnected && address) {
       const finalScore = calculateScore(stats);
       const dayId = getCurrentDayId();
       
@@ -80,8 +82,10 @@ export default function GamePage() {
       } catch (error) {
         console.error('❌ Error submitting score:', error);
       }
+    } else if (isDemoMode) {
+      console.log('🎮 Demo mode - Score not submitted to leaderboard');
     }
-  }, [isConnected, address, stats]);
+  }, [isConnected, address, stats, isDemoMode]);
 
   // Timer countdown
   useEffect(() => {
@@ -166,6 +170,11 @@ export default function GamePage() {
         return;
       }
 
+      // If wallet is connected, disable demo mode (only if game is not running)
+      if (isDemoMode && !gameState.isRunning) {
+        setIsDemoMode(false);
+      }
+
       setIsCheckingEntry(true);
       try {
         const dayId = getCurrentDayId();
@@ -180,11 +189,11 @@ export default function GamePage() {
     };
 
     checkEntry();
-  }, [isMounted, isConnected, address]);
+  }, [isMounted, isConnected, address, isDemoMode, gameState.isRunning]);
 
   const handleStart = async () => {
-    // Check entry before starting
-    if (isConnected && address) {
+    // Check entry before starting (only if not in demo mode)
+    if (!isDemoMode && isConnected && address) {
       const dayId = getCurrentDayId();
       const entered = await hasEntered(dayId, address);
       
@@ -212,6 +221,11 @@ export default function GamePage() {
     });
   };
 
+  const handleStartDemo = () => {
+    setIsDemoMode(true);
+    handleStart();
+  };
+
 
   const handlePlayAgain = () => {
     setGameState({
@@ -230,6 +244,7 @@ export default function GamePage() {
       currentSpeed: 0,
       position: 0,
     });
+    // Keep demo mode if it was active
   };
 
   const handleStatsUpdate = (newStats: GameStats) => {
@@ -265,6 +280,7 @@ export default function GamePage() {
           timeRemaining={timeRemaining}
           speed={stats.currentSpeed}
           distance={stats.distance}
+          isDemoMode={isDemoMode}
         />
       )}
 
@@ -318,10 +334,10 @@ export default function GamePage() {
                   </>
                 ) : (
                   <>
-                    <div className="bg-yellow-500/20 border border-yellow-400 text-yellow-400 p-4 rounded mb-4">
-                      Connect your wallet to enter the tournament
+                    <div className="bg-blue-500/20 border border-blue-400 text-blue-400 p-4 rounded mb-4">
+                      🎮 <strong>DEMO MODE</strong> - Play for fun! Connect your wallet to enter the tournament and compete for prizes.
                     </div>
-                    <PreGameOverlay onStart={handleStart} />
+                    <PreGameOverlay onStart={handleStartDemo} isDemoMode={true} />
                   </>
                 )}
               </>
@@ -332,7 +348,7 @@ export default function GamePage() {
 
       {/* End-game Overlay */}
       {gameState.isFinished && (
-        <EndGameOverlay stats={stats} onPlayAgain={handlePlayAgain} />
+        <EndGameOverlay stats={stats} onPlayAgain={handlePlayAgain} isDemoMode={isDemoMode} />
       )}
 
       {/* Control Buttons and Timers (when not in overlays) */}
@@ -390,14 +406,6 @@ export default function GamePage() {
         </div>
       )}
 
-      {/* Wallet Warning */}
-      {isMounted && !isConnected && (
-        <div className="absolute bottom-4 left-4 right-4 z-50 bg-yellow-500/90 text-black p-4 rounded border-2 border-yellow-400">
-          <p className="text-center font-bold">
-            Connect your wallet to save your score to the leaderboard!
-          </p>
-        </div>
-      )}
 
       {/* Fallback Username Modal (if UsernameCheckProvider doesn't work) */}
       {isConnected && address && (

@@ -32,7 +32,7 @@ export const metadata: Metadata = {
     url: 'https://arccryptorace.xyz',
     siteName: 'ARC CRYPTO RACE',
     title: 'ARC CRYPTO RACE | Web3 Racing Tournament on ARC Testnet',
-    description: 'The Ultimate Crypto Racing Tournament! Race for 5 minutes, compete for daily USDC prizes. Top 3 players win the prize pool. Only on ARC Testnet.',
+    description: 'The Ultimate Crypto Racing Tournament! Race for 5 minutes, compete for daily USDC faucet prizes. Top 3 players win the prize pool. Only on ARC Testnet.',
     images: [
       {
         url: '/images/retro-racing-hero.png',
@@ -46,7 +46,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'ARC CRYPTO RACE | Web3 Racing Tournament',
-    description: 'Race for 5 minutes, compete for daily USDC prizes. Top 3 players win. Only on ARC Testnet.',
+    description: 'Race for 5 minutes, compete for daily USDC faucet prizes. Top 3 players win. Only on ARC Testnet.',
     images: ['/images/retro-racing-hero.png'],
     creator: '@ARC',
     site: '@ARC',
