@@ -46,14 +46,14 @@ export function LeaderboardFooter() {
     <footer className="py-12 bg-card border-t-2" style={{ borderColor: "var(--neon-pink)" }}>
       <div className="container mx-auto max-w-6xl px-4">
         {/* Back to Home and Share Leaderboard buttons - Back to Home left, Share Leaderboard right, same height */}
-        <div className="flex justify-between gap-4 mb-8">
+        <div className="flex flex-col sm:flex-row justify-between gap-4 mb-8">
           <Link
             href="/"
-            className="group flex items-center gap-2 rounded-none border-4 border-primary bg-primary/20 px-6 py-3 font-mono font-bold uppercase tracking-wider text-primary transition-all hover:bg-primary hover:text-black hover:shadow-[0_0_30px_hsl(var(--primary))]"
-            style={{ height: '48px' }}
+            className="group flex items-center justify-center gap-2 rounded-none border-4 border-primary bg-primary/20 px-4 sm:px-6 py-3 font-mono font-bold uppercase tracking-wider text-primary transition-all hover:bg-primary hover:text-black hover:shadow-[0_0_30px_hsl(var(--primary))] whitespace-nowrap"
+            style={{ minHeight: '48px' }}
           >
-            <Home className="h-5 w-5" />
-            Back to Home
+            <Home className="h-5 w-5 flex-shrink-0" />
+            <span className="text-xs sm:text-sm">Back to Home</span>
           </Link>
 
           <a
@@ -65,15 +65,15 @@ export function LeaderboardFooter() {
                 e.preventDefault()
               }
             }}
-            className="flex items-center gap-2 rounded-none border-4 px-6 py-3 font-mono font-bold uppercase tracking-wider transition-all hover:scale-105 bg-transparent"
+            className="flex items-center justify-center gap-2 rounded-none border-4 px-4 sm:px-6 py-3 font-mono font-bold uppercase tracking-wider transition-all hover:scale-105 bg-transparent whitespace-nowrap"
             style={{
               borderColor: "var(--racing-yellow)",
               color: "var(--racing-yellow)",
-              height: '48px'
+              minHeight: '48px'
             }}
           >
-            <Twitter className="h-5 w-5" />
-            Share Leaderboard
+            <Twitter className="h-5 w-5 flex-shrink-0" />
+            <span className="text-xs sm:text-sm">Share Leaderboard</span>
           </a>
         </div>
 
@@ -172,6 +172,20 @@ export function LeaderboardFooter() {
               javascript-racer by jakesgordon
             </a>
           </p>
+          {process.env.NEXT_PUBLIC_TOURNAMENT_CONTRACT_ADDRESS && (
+            <p className="text-[10px] font-mono text-muted-foreground mt-3 opacity-50">
+              Contract:{" "}
+              <a
+                href={`https://testnet.arcscan.app/address/${process.env.NEXT_PUBLIC_TOURNAMENT_CONTRACT_ADDRESS}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:underline hover:opacity-100 transition-opacity"
+                style={{ color: "var(--neon-blue)" }}
+              >
+                {process.env.NEXT_PUBLIC_TOURNAMENT_CONTRACT_ADDRESS.slice(0, 6)}...{process.env.NEXT_PUBLIC_TOURNAMENT_CONTRACT_ADDRESS.slice(-4)}
+              </a>
+            </p>
+          )}
         </div>
       </div>
     </footer>

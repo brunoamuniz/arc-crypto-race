@@ -140,6 +140,20 @@ export function Footer() {
               javascript-racer by jakesgordon
             </a>
           </p>
+          {process.env.NEXT_PUBLIC_TOURNAMENT_CONTRACT_ADDRESS && (
+            <p className="text-[10px] font-mono text-muted-foreground mt-3 opacity-50">
+              Contract:{" "}
+              <a
+                href={`https://testnet.arcscan.app/address/${process.env.NEXT_PUBLIC_TOURNAMENT_CONTRACT_ADDRESS}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:underline hover:opacity-100 transition-opacity"
+                style={{ color: "var(--neon-blue)" }}
+              >
+                {process.env.NEXT_PUBLIC_TOURNAMENT_CONTRACT_ADDRESS.slice(0, 6)}...{process.env.NEXT_PUBLIC_TOURNAMENT_CONTRACT_ADDRESS.slice(-4)}
+              </a>
+            </p>
+          )}
         </div>
       </div>
     </footer>
