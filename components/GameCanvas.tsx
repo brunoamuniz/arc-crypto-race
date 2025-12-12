@@ -249,7 +249,7 @@ export function GameCanvas({ onStatsUpdate, onGameEnd, isRunning, timeLimit }: G
   }, [isRunning]);
 
   return (
-    <div ref={containerRef} className="relative w-full h-full flex items-center justify-center bg-black" style={{ minHeight: '100vh', minWidth: '100vw' }}>
+    <div ref={containerRef} className="relative w-full h-full flex items-center justify-center bg-black" style={{ minHeight: '100vh', minWidth: '100vw', zIndex: 0 }}>
       {/* Audio element for game music */}
       <audio id="game-music" preload="auto">
         <source src="/game/assets/music/racer.ogg" type="audio/ogg" />
@@ -258,7 +258,7 @@ export function GameCanvas({ onStatsUpdate, onGameEnd, isRunning, timeLimit }: G
 
       <canvas
         ref={canvasRef}
-        className="block"
+        className="block relative"
         style={{ 
           imageRendering: 'pixelated',
           display: 'block',
@@ -267,7 +267,8 @@ export function GameCanvas({ onStatsUpdate, onGameEnd, isRunning, timeLimit }: G
           width: 'auto',
           height: 'auto',
           objectFit: 'contain',
-          zIndex: 1
+          zIndex: 0,
+          position: 'relative'
         }}
       />
       {(!scriptsLoaded || !gameInitialized) && (
