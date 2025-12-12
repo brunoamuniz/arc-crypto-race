@@ -17,16 +17,14 @@ export const maxDuration = 300; // 5 minutes max execution time
 
 export async function GET(request: NextRequest) {
   try {
-    // Verify cron secret (Vercel adds this header automatically)
-    const authHeader = request.headers.get('authorization');
-    const cronSecret = process.env.CRON_SECRET;
+    // Vercel automatically adds x-vercel-signature header for cron jobs
+    const vercelSignature = request.headers.get('x-vercel-signature');
     
-    // If CRON_SECRET is set, verify it
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-      // For Vercel Cron, the header is automatically set, but we can still check
-      // Vercel sets: x-vercel-signature header
-      const vercelSignature = request.headers.get('x-vercel-signature');
-      if (!vercelSignature && authHeader !== `Bearer ${cronSecret}`) {
+    // If CRON_SECRET is set and this is not a Vercel cron call, verify the secret
+    const cronSecret = process.env.CRON_SECRET;
+    if (cronSecret && !vercelSignature) {
+      const authHeader = request.headers.get('authorization');
+      if (authHeader !== `Bearer ${cronSecret}`) {
         return NextResponse.json(
           { error: 'Unauthorized' },
           { status: 401 }
@@ -55,3 +53,4 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
