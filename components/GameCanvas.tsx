@@ -249,7 +249,7 @@ export function GameCanvas({ onStatsUpdate, onGameEnd, isRunning, timeLimit }: G
   }, [isRunning]);
 
   return (
-    <div ref={containerRef} className="relative w-full h-full flex items-center justify-center bg-black">
+    <div ref={containerRef} className="relative w-full h-full flex items-center justify-center bg-black" style={{ minHeight: '100vh', minWidth: '100vw' }}>
       {/* Audio element for game music */}
       <audio id="game-music" preload="auto">
         <source src="/game/assets/music/racer.ogg" type="audio/ogg" />
@@ -258,8 +258,17 @@ export function GameCanvas({ onStatsUpdate, onGameEnd, isRunning, timeLimit }: G
 
       <canvas
         ref={canvasRef}
-        className="max-w-full max-h-full"
-        style={{ imageRendering: 'pixelated' }}
+        className="block"
+        style={{ 
+          imageRendering: 'pixelated',
+          display: 'block',
+          maxWidth: '100%',
+          maxHeight: '100%',
+          width: 'auto',
+          height: 'auto',
+          objectFit: 'contain',
+          zIndex: 1
+        }}
       />
       {(!scriptsLoaded || !gameInitialized) && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/80">
