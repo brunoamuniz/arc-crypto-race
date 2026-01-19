@@ -120,8 +120,10 @@ CREATE TRIGGER trigger_update_best_score
 -- ============================================
 -- View: daily_leaderboard
 -- Convenience view for leaderboard queries
+-- Using SECURITY INVOKER (default) to run with caller's permissions
 -- ============================================
-CREATE OR REPLACE VIEW daily_leaderboard AS
+CREATE OR REPLACE VIEW daily_leaderboard 
+WITH (security_invoker=true) AS
 SELECT 
     bs.wallet,
     bs.day_id,
@@ -130,6 +132,9 @@ SELECT
     ROW_NUMBER() OVER (PARTITION BY bs.day_id ORDER BY bs.best_score DESC) as rank
 FROM best_scores bs
 ORDER BY bs.day_id DESC, bs.best_score DESC;
+
+-- Grant public read access to the view
+GRANT SELECT ON daily_leaderboard TO anon, authenticated;
 
 -- ============================================
 -- Row Level Security (RLS) Policies
