@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import Script from 'next/script';
 import type { GameStats } from '@/lib/types';
 
 interface GameCanvasProps {

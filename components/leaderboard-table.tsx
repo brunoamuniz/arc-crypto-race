@@ -1,7 +1,7 @@
 "use client"
 
-import { Trophy, Medal, Award, Loader2 } from "lucide-react"
-import { useEffect, useState } from "react"
+import { Trophy, Medal, Award, Loader2, Crown, Flame } from "lucide-react"
+import { useEffect, useState, useRef } from "react"
 import { getCurrentDayId } from "@/lib/dayId"
 
 interface LeaderboardEntry {
@@ -20,26 +20,56 @@ interface LeaderboardData {
 function getRankIcon(rank: number) {
   switch (rank) {
     case 1:
-      return <Trophy className="h-6 w-6 text-primary drop-shadow-[0_0_10px_hsl(var(--primary))]" />
+      return (
+        <div className="relative">
+          <Crown className="h-8 w-8 trophy-gold animate-bounce" />
+          <div className="absolute inset-0 animate-ping opacity-30">
+            <Crown className="h-8 w-8 trophy-gold" />
+          </div>
+        </div>
+      )
     case 2:
-      return <Medal className="h-6 w-6 text-accent drop-shadow-[0_0_10px_hsl(var(--accent))]" />
+      return <Medal className="h-7 w-7 trophy-silver" />
     case 3:
-      return <Award className="h-6 w-6 text-secondary drop-shadow-[0_0_10px_hsl(var(--secondary))]" />
+      return <Award className="h-6 w-6 trophy-bronze" />
     default:
-      return <span className="font-mono text-lg font-bold text-muted-foreground">#{rank}</span>
+      return (
+        <span
+          className="font-arcade text-lg"
+          style={{ color: rank <= 10 ? 'var(--neon-cyan)' : 'var(--muted-foreground)' }}
+        >
+          #{rank}
+        </span>
+      )
   }
 }
 
-function getRankBorder(rank: number) {
+function getRankStyle(rank: number) {
   switch (rank) {
     case 1:
-      return "border-primary shadow-[0_0_20px_hsl(var(--primary)/0.5)]"
+      return {
+        border: '3px solid #ffd700',
+        background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.15) 0%, rgba(0,0,0,0.8) 100%)',
+        boxShadow: '0 0 30px rgba(255, 215, 0, 0.3), inset 0 0 20px rgba(255, 215, 0, 0.1)',
+      }
     case 2:
-      return "border-accent shadow-[0_0_15px_hsl(var(--accent)/0.4)]"
+      return {
+        border: '3px solid #c0c0c0',
+        background: 'linear-gradient(135deg, rgba(192, 192, 192, 0.15) 0%, rgba(0,0,0,0.8) 100%)',
+        boxShadow: '0 0 25px rgba(192, 192, 192, 0.3), inset 0 0 15px rgba(192, 192, 192, 0.1)',
+      }
     case 3:
-      return "border-secondary shadow-[0_0_15px_hsl(var(--secondary)/0.4)]"
+      return {
+        border: '3px solid #cd7f32',
+        background: 'linear-gradient(135deg, rgba(205, 127, 50, 0.15) 0%, rgba(0,0,0,0.8) 100%)',
+        boxShadow: '0 0 20px rgba(205, 127, 50, 0.3), inset 0 0 15px rgba(205, 127, 50, 0.1)',
+      }
     default:
-      return "border-muted hover:border-accent/50"
+      return {
+        border: '1px solid rgba(255,255,255,0.1)',
+        background: 'rgba(0,0,0,0.6)',
+        boxShadow: 'none',
+      }
   }
 }
 
@@ -49,11 +79,8 @@ function formatWallet(wallet: string): string {
 }
 
 function formatTimeAgo(dateString: string, isMounted: boolean): string {
-  // Return a placeholder during SSR to prevent hydration mismatch
-  if (!isMounted) {
-    return "--"
-  }
-  
+  if (!isMounted) return "--"
+
   const date = new Date(dateString)
   const now = new Date()
   const diffMs = now.getTime() - date.getTime()
@@ -72,25 +99,46 @@ export function LeaderboardTable() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isMounted, setIsMounted] = useState(false)
+  const [isVisible, setIsVisible] = useState(false)
+  const sectionRef = useRef<HTMLElement>(null)
 
-  // Set mounted flag to prevent hydration mismatch
   useEffect(() => {
     setIsMounted(true)
   }, [])
 
   useEffect(() => {
+    // Don't set up observer while loading
+    if (isLoading) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true)
+        }
+      },
+      { threshold: 0.1 }
+    )
+
+    if (sectionRef.current) {
+      observer.observe(sectionRef.current)
+    }
+
+    return () => observer.disconnect()
+  }, [isLoading])
+
+  useEffect(() => {
     async function fetchLeaderboard() {
       setIsLoading(true)
       setError(null)
-      
+
       try {
         const dayId = getCurrentDayId()
         const response = await fetch(`/api/leaderboard?dayId=${dayId}`)
-        
+
         if (!response.ok) {
           throw new Error('Failed to fetch leaderboard')
         }
-        
+
         const data: LeaderboardData = await response.json()
         setLeaderboardData(data)
       } catch (err: any) {
@@ -106,14 +154,30 @@ export function LeaderboardTable() {
 
   const leaderboard = leaderboardData?.leaderboard || []
   const isEmpty = !isLoading && leaderboard.length === 0
+  const topThree = leaderboard.slice(0, 3)
+  const rest = leaderboard.slice(3)
 
   if (isLoading) {
     return (
       <section className="py-12">
         <div className="container mx-auto max-w-6xl px-4">
-          <div className="flex min-h-[400px] flex-col items-center justify-center rounded-none border-4 border-dashed border-muted bg-black/30 p-12 text-center">
-            <Loader2 className="mb-4 h-16 w-16 animate-spin text-primary" />
-            <h3 className="mb-2 font-mono text-2xl font-bold text-foreground">Loading Leaderboard...</h3>
+          <div
+            className="flex min-h-[400px] flex-col items-center justify-center p-12 text-center"
+            style={{
+              background: 'rgba(0,0,0,0.6)',
+              border: '2px solid var(--neon-purple)',
+            }}
+          >
+            <div className="relative mb-6">
+              <Loader2 className="h-16 w-16 animate-spin" style={{ color: 'var(--neon-pink)' }} />
+              <div className="absolute inset-0 animate-ping opacity-30">
+                <div className="h-16 w-16 rounded-full" style={{ backgroundColor: 'var(--neon-pink)' }} />
+              </div>
+            </div>
+            <h3 className="font-arcade text-xl mb-2" style={{ color: 'var(--neon-pink)' }}>
+              LOADING RANKINGS
+            </h3>
+            <p className="font-mono text-sm text-muted-foreground">Fetching today's leaderboard...</p>
           </div>
         </div>
       </section>
@@ -124,8 +188,16 @@ export function LeaderboardTable() {
     return (
       <section className="py-12">
         <div className="container mx-auto max-w-6xl px-4">
-          <div className="flex min-h-[400px] flex-col items-center justify-center rounded-none border-4 border-dashed border-red-500/50 bg-black/30 p-12 text-center">
-            <h3 className="mb-2 font-mono text-2xl font-bold text-red-400">Error Loading Leaderboard</h3>
+          <div
+            className="flex min-h-[400px] flex-col items-center justify-center p-12 text-center"
+            style={{
+              background: 'rgba(0,0,0,0.6)',
+              border: '2px solid var(--ferrari-red)',
+            }}
+          >
+            <h3 className="font-arcade text-xl mb-2" style={{ color: 'var(--ferrari-red)' }}>
+              CONNECTION ERROR
+            </h3>
             <p className="font-mono text-sm text-muted-foreground">{error}</p>
           </div>
         </div>
@@ -134,129 +206,174 @@ export function LeaderboardTable() {
   }
 
   return (
-    <section className="py-12">
+    <section ref={sectionRef} className="py-12">
       <div className="container mx-auto max-w-6xl px-4">
         {isEmpty ? (
-          <div className="flex min-h-[400px] flex-col items-center justify-center rounded-none border-4 border-dashed border-muted bg-black/30 p-12 text-center">
-            <Trophy className="mb-4 h-16 w-16 text-muted-foreground" />
-            <h3 className="mb-2 font-mono text-2xl font-bold text-foreground">No Racers Yet</h3>
-            <p className="mb-6 font-mono text-sm text-muted-foreground">Be the first to race and claim the top spot!</p>
+          <div
+            className={`flex min-h-[400px] flex-col items-center justify-center p-12 text-center transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+            style={{
+              background: 'rgba(0,0,0,0.6)',
+              border: '2px dashed var(--neon-purple)',
+            }}
+          >
+            <Trophy className="mb-6 h-20 w-20 text-muted-foreground float" />
+            <h3 className="font-arcade text-2xl mb-4" style={{ color: 'var(--neon-pink)' }}>
+              NO RACERS YET
+            </h3>
+            <p className="font-mono text-sm text-muted-foreground mb-8">
+              Be the first to race and claim the top spot!
+            </p>
             <a
-              href="/"
-              className="rounded-none border-4 border-primary bg-primary/20 px-6 py-3 font-mono font-bold uppercase tracking-wider text-primary transition-all hover:bg-primary hover:text-black hover:shadow-[0_0_30px_hsl(var(--primary))]"
+              href="/game"
+              className="px-8 py-4 font-bold tracking-wider transition-all duration-300 hover:scale-105 btn-legendary"
+              style={{
+                backgroundColor: 'var(--ferrari-red)',
+                color: 'white',
+                boxShadow: '0 0 30px rgba(255,50,50,0.4)',
+              }}
             >
-              Start Racing
+              START RACING
             </a>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            {/* Desktop Table */}
-            <div className="hidden md:block">
-              <table className="w-full border-4 border-accent bg-black/80">
-                <thead>
-                  <tr className="border-b-4 border-accent bg-accent/20">
-                    <th className="border-r-2 border-accent/50 p-4 text-left font-mono text-sm font-bold uppercase tracking-wider text-accent">
-                      Rank
-                    </th>
-                    <th className="border-r-2 border-accent/50 p-4 text-left font-mono text-sm font-bold uppercase tracking-wider text-accent">
-                      Player
-                    </th>
-                    <th className="border-r-2 border-accent/50 p-4 text-left font-mono text-sm font-bold uppercase tracking-wider text-accent">
-                      Score
-                    </th>
-                    <th className="border-r-2 border-accent/50 p-4 text-left font-mono text-sm font-bold uppercase tracking-wider text-accent">
-                      Best Time
-                    </th>
-                    <th className="p-4 text-left font-mono text-sm font-bold uppercase tracking-wider text-accent">
-                      Last Race
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {leaderboard.map((entry, index) => {
-                    const rank = index + 1
+          <>
+            {/* Top 3 Podium Display */}
+            {topThree.length > 0 && (
+              <div
+                className={`mb-12 transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+              >
+                <div className="flex justify-center items-end gap-4 md:gap-6">
+                  {/* Reorder for podium: 2nd, 1st, 3rd */}
+                  {[topThree[1], topThree[0], topThree[2]].map((entry, i) => {
+                    if (!entry) return null
+                    const actualRank = i === 0 ? 2 : i === 1 ? 1 : 3
+                    const heights = ['h-32', 'h-44', 'h-24']
+                    const delays = ['delay-200', 'delay-100', 'delay-300']
+
                     return (
-                      <tr
+                      <div
                         key={entry.wallet}
-                        className={`border-b-2 border-accent/30 transition-all hover:bg-accent/10 ${
-                          rank <= 3 ? "bg-accent/5" : ""
-                        }`}
+                        className={`flex flex-col items-center transition-all duration-700 ${delays[i]} ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'}`}
                       >
-                        <td className="border-r-2 border-accent/30 p-4">
-                          <div className="flex items-center gap-2">{getRankIcon(rank)}</div>
-                        </td>
-                        <td className="border-r-2 border-accent/30 p-4 font-mono text-sm text-foreground">
-                          <div className="flex flex-col gap-1">
-                            {entry.username ? (
-                              <>
-                                <span className="font-bold text-primary">{entry.username}</span>
-                                <span className="text-xs text-muted-foreground">{formatWallet(entry.wallet)}</span>
-                              </>
-                            ) : (
-                              <span>{formatWallet(entry.wallet)}</span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="border-r-2 border-accent/30 p-4">
-                          <span className="font-mono text-lg font-bold text-primary drop-shadow-[0_0_10px_hsl(var(--primary)/0.5)]">
+                        {/* Trophy Icon */}
+                        <div className="mb-3">
+                          {getRankIcon(actualRank)}
+                        </div>
+
+                        {/* Player Info */}
+                        <div className="text-center mb-3">
+                          {entry.username ? (
+                            <div
+                              className="font-display text-sm md:text-base font-bold mb-1"
+                              style={{ color: actualRank === 1 ? '#ffd700' : actualRank === 2 ? '#c0c0c0' : '#cd7f32' }}
+                            >
+                              {entry.username}
+                            </div>
+                          ) : (
+                            <div className="font-mono text-xs text-muted-foreground mb-1">
+                              {formatWallet(entry.wallet)}
+                            </div>
+                          )}
+                          <div
+                            className="font-arcade text-lg md:text-2xl neon-glow"
+                            style={{ color: actualRank === 1 ? '#ffd700' : actualRank === 2 ? '#c0c0c0' : '#cd7f32' }}
+                          >
                             {entry.best_score.toLocaleString()}
+                          </div>
+                        </div>
+
+                        {/* Podium Block */}
+                        <div
+                          className={`w-24 md:w-32 ${heights[i]} flex items-center justify-center transition-all duration-300 hover:scale-105`}
+                          style={getRankStyle(actualRank)}
+                        >
+                          <span
+                            className="font-arcade text-2xl md:text-3xl"
+                            style={{ color: actualRank === 1 ? '#ffd700' : actualRank === 2 ? '#c0c0c0' : '#cd7f32' }}
+                          >
+                            {actualRank}
                           </span>
-                        </td>
-                        <td className="border-r-2 border-accent/30 p-4 font-mono text-sm text-secondary">
-                          {formatTimeAgo(entry.updated_at, isMounted)}
-                        </td>
-                        <td className="p-4 font-mono text-xs text-muted-foreground">
-                          {formatTimeAgo(entry.updated_at, isMounted)}
-                        </td>
-                      </tr>
+                        </div>
+                      </div>
                     )
                   })}
-                </tbody>
-              </table>
-            </div>
+                </div>
+              </div>
+            )}
 
-            {/* Mobile Cards */}
-            <div className="space-y-4 md:hidden">
-              {leaderboard.map((entry, index) => {
-                const rank = index + 1
-                return (
-                  <div key={entry.wallet} className={`rounded-none border-4 ${getRankBorder(rank)} bg-black/80 p-4`}>
-                    <div className="mb-3 flex items-center justify-between">
-                      <div className="flex items-center gap-2">{getRankIcon(rank)}</div>
-                      <span className="font-mono text-2xl font-bold text-primary drop-shadow-[0_0_10px_hsl(var(--primary)/0.5)]">
-                        {entry.best_score.toLocaleString()}
-                      </span>
-                    </div>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex flex-col gap-1">
+            {/* Rest of Leaderboard */}
+            {rest.length > 0 && (
+              <div
+                className={`space-y-3 transition-all duration-700 delay-400 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+              >
+                {rest.map((entry, index) => {
+                  const rank = index + 4
+                  const isTopTen = rank <= 10
+
+                  return (
+                    <div
+                      key={entry.wallet}
+                      className="group flex items-center gap-4 p-4 transition-all duration-300 hover:scale-[1.02]"
+                      style={{
+                        background: isTopTen
+                          ? 'linear-gradient(135deg, rgba(100, 50, 255, 0.1) 0%, rgba(0,0,0,0.7) 100%)'
+                          : 'rgba(0,0,0,0.5)',
+                        border: `1px solid ${isTopTen ? 'var(--neon-purple)' : 'rgba(255,255,255,0.1)'}`,
+                        boxShadow: isTopTen ? '0 0 15px rgba(100, 50, 255, 0.2)' : 'none',
+                      }}
+                    >
+                      {/* Rank */}
+                      <div className="w-12 flex justify-center">
+                        {getRankIcon(rank)}
+                      </div>
+
+                      {/* Player Info */}
+                      <div className="flex-1 min-w-0">
                         {entry.username ? (
-                          <>
-                            <div className="flex justify-between">
-                              <span className="font-mono text-muted-foreground">Player:</span>
-                              <span className="font-mono font-bold text-primary">{entry.username}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="font-mono text-xs text-muted-foreground">Wallet:</span>
-                              <span className="font-mono text-xs text-foreground">{formatWallet(entry.wallet)}</span>
-                            </div>
-                          </>
-                        ) : (
-                          <div className="flex justify-between">
-                            <span className="font-mono text-muted-foreground">Wallet:</span>
-                            <span className="font-mono text-foreground">{formatWallet(entry.wallet)}</span>
+                          <div className="flex flex-col">
+                            <span
+                              className="font-display font-bold truncate"
+                              style={{ color: isTopTen ? 'var(--neon-cyan)' : 'var(--foreground)' }}
+                            >
+                              {entry.username}
+                            </span>
+                            <span className="font-mono text-xs text-muted-foreground">
+                              {formatWallet(entry.wallet)}
+                            </span>
                           </div>
+                        ) : (
+                          <span className="font-mono text-sm">
+                            {formatWallet(entry.wallet)}
+                          </span>
                         )}
                       </div>
-                      <div className="flex justify-between">
-                        <span className="font-mono text-muted-foreground">Last Race:</span>
-                        <span className="font-mono text-muted-foreground">{formatTimeAgo(entry.updated_at, isMounted)}</span>
+
+                      {/* Score */}
+                      <div className="text-right">
+                        <div
+                          className="font-arcade text-xl"
+                          style={{ color: isTopTen ? 'var(--racing-yellow)' : 'var(--foreground)' }}
+                        >
+                          {entry.best_score.toLocaleString()}
+                        </div>
+                        <div className="font-mono text-xs text-muted-foreground">
+                          {formatTimeAgo(entry.updated_at, isMounted)}
+                        </div>
                       </div>
+
+                      {/* Hot streak indicator for top 10 */}
+                      {isTopTen && (
+                        <Flame
+                          className="w-5 h-5 opacity-0 group-hover:opacity-100 transition-opacity"
+                          style={{ color: 'var(--electric-orange)' }}
+                        />
+                      )}
                     </div>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
+                  )
+                })}
+              </div>
+            )}
+          </>
         )}
       </div>
     </section>

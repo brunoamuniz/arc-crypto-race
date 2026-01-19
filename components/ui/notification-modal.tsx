@@ -95,7 +95,7 @@ export function NotificationModal({
           'max-w-md'
         )}
         style={{
-          borderColor: `var(--${type === 'success' ? 'green' : type === 'error' ? 'ferrari-red' : type === 'warning' ? 'racing-yellow' : 'neon-cyan'}-400)`,
+          borderColor: `var(--${type === 'success' ? 'neon-green' : type === 'error' ? 'ferrari-red' : type === 'warning' ? 'racing-yellow' : 'neon-cyan'})`,
         }}
       >
         <DialogHeader className="space-y-4">
@@ -107,7 +107,7 @@ export function NotificationModal({
               <DialogTitle
                 className={cn('text-2xl font-bold font-mono', colors.text)}
                 style={{
-                  color: `var(--${type === 'success' ? 'green' : type === 'error' ? 'ferrari-red' : type === 'warning' ? 'racing-yellow' : 'neon-cyan'}-400)`,
+                  color: `var(--${type === 'success' ? 'neon-green' : type === 'error' ? 'ferrari-red' : type === 'warning' ? 'racing-yellow' : 'neon-cyan'})`,
                 }}
               >
                 {title}
@@ -138,7 +138,7 @@ export function NotificationModal({
             onClick={handleConfirm}
             className={cn('font-bold font-mono', colors.button)}
             style={{
-              backgroundColor: `var(--${type === 'success' ? 'green' : type === 'error' ? 'ferrari-red' : type === 'warning' ? 'racing-yellow' : 'neon-cyan'}-500)`,
+              backgroundColor: `var(--${type === 'success' ? 'neon-green' : type === 'error' ? 'ferrari-red' : type === 'warning' ? 'racing-yellow' : 'neon-cyan'})`,
             }}
           >
             {confirmLabel}

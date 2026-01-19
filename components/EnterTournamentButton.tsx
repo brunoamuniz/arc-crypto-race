@@ -495,7 +495,7 @@ export function EnterTournamentButton({ onEntered }: EnterTournamentButtonProps)
       setNeedsApproval(false);
       setHasCalledEnter(false);
     }
-  }, [isConnected, address, writeUSDC, chainId, chain, switchChain, showNotification, refetchBalance, refetchAllowance, allowance, usdcBalance]);
+  }, [isConnected, address, writeUSDC, writeTournament, chainId, chain, switchChain, showNotification, refetchBalance, refetchAllowance, allowance, usdcBalance, hasCalledEnter]);
 
   const isLoading = isChecking || isApproving || isApprovingTx || isEntering || isEnteringTx;
 
