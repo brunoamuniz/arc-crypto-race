@@ -55,3 +55,6 @@ declare global {
     };
   }
 }
+
+// Required for TypeScript to treat this as a module with global augmentation
+export {};
