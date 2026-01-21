@@ -24,3 +24,34 @@ export type LeaderboardEntry = {
   timestamp: number;
 };
 
+// Window type augmentation for game state
+declare global {
+  interface Window {
+    Game?: any;
+    Dom?: any;
+    Util?: any;
+    Render?: any;
+    SPRITES?: any;
+    COLORS?: any;
+    BACKGROUND?: any;
+    gameState?: {
+      position: number;
+      speed: number;
+      maxSpeed: number;
+      crashes: number;
+      totalGameTime: number;
+      totalDistance: number;  // Cumulative distance (never wraps)
+      playerX: number;
+      trackLength: number;
+      segmentLength: number;
+      isInitialized: boolean;
+      isRunning: boolean;
+    };
+    gameInstance?: {
+      init: (canvas: HTMLCanvasElement) => void;
+      start: () => void;
+      stop: () => void;
+      reset: () => void;
+    };
+  }
+}

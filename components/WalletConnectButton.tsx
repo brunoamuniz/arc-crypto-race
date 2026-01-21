@@ -4,11 +4,36 @@ import { useAccount, useConnect, useDisconnect } from 'wagmi';
 import { Button } from '@/components/ui/button';
 import { Wallet } from 'lucide-react';
 import { truncateAddress } from '@/lib/wallet';
+import { useState, useEffect } from 'react';
 
 export function WalletConnectButton() {
   const { address, isConnected } = useAccount();
   const { connectors, connect } = useConnect();
   const { disconnect } = useDisconnect();
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // Render connect button on server and until client is mounted to avoid hydration mismatch
+  if (!isMounted) {
+    return (
+      <Button
+        size="lg"
+        variant="outline"
+        className="pixel-border text-sm md:text-base px-8 py-6 font-bold hover:scale-105 transition-transform bg-transparent"
+        style={{
+          borderColor: "var(--neon-cyan)",
+          color: "var(--neon-cyan)",
+        }}
+        disabled
+      >
+        <Wallet className="mr-2 h-5 w-5" />
+        CONNECT WALLET
+      </Button>
+    );
+  }
 
   if (isConnected && address) {
     return (

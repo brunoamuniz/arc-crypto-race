@@ -10,31 +10,7 @@ interface GameCanvasProps {
   timeLimit: number;
 }
 
-declare global {
-  interface Window {
-    Game?: any;
-    Dom?: any;
-    Util?: any;
-    gameState?: {
-      position: number;
-      speed: number;
-      maxSpeed: number;
-      crashes: number;
-      totalGameTime: number;
-      playerX: number;
-      trackLength: number;
-      segmentLength: number;
-      isInitialized: boolean;
-      isRunning: boolean;
-    };
-    gameInstance?: {
-      init: (canvas: HTMLCanvasElement) => void;
-      start: () => void;
-      stop: () => void;
-      reset: () => void;
-    };
-  }
-}
+// Window types are declared in lib/types.ts
 
 export function GameCanvas({ onStatsUpdate, onGameEnd, isRunning, timeLimit }: GameCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -253,7 +229,8 @@ export function GameCanvas({ onStatsUpdate, onGameEnd, isRunning, timeLimit }: G
       if (!window.gameState) return;
 
       const stats: GameStats = {
-        distance: window.gameState.position,
+        // CRITICAL: Use totalDistance (cumulative) instead of position (wraps around track)
+        distance: window.gameState.totalDistance ?? window.gameState.position,
         maxSpeed: window.gameState.maxSpeed,
         elapsedTime: window.gameState.totalGameTime,
         crashes: window.gameState.crashes,

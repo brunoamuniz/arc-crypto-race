@@ -8,31 +8,7 @@ export interface GameEngineInstance {
   isRunning: () => boolean;
 }
 
-declare global {
-  interface Window {
-    gameState?: {
-      position: number;
-      speed: number;
-      maxSpeed: number;
-      crashes: number;
-      totalGameTime: number;
-      playerX: number;
-      trackLength: number;
-      segmentLength: number;
-      isInitialized: boolean;
-      isRunning: boolean;
-    };
-    gameInstance?: {
-      init: (canvas: HTMLCanvasElement) => void;
-      start: () => void;
-      stop: () => void;
-      reset: () => void;
-    };
-    Game?: any;
-    Dom?: any;
-    Util?: any;
-  }
-}
+// Window types are declared in lib/types.ts
 
 /**
  * Initialize the game engine with a canvas element
@@ -68,12 +44,13 @@ export async function initializeGameEngine(
   let statsUpdateInterval: NodeJS.Timeout | null = null;
   
   // Game variables (will be set by game code)
-  const gameState: Window['gameState'] = {
+  const gameState: NonNullable<Window['gameState']> = {
     position: 0,
     speed: 0,
     maxSpeed: 0,
     crashes: 0,
     totalGameTime: 0,
+    totalDistance: 0,
     playerX: 0,
     trackLength: 0,
     segmentLength: 200,
@@ -94,7 +71,7 @@ export async function initializeGameEngine(
       if (onStatsUpdate) {
         statsUpdateInterval = setInterval(() => {
           const stats: GameStats = {
-            distance: gameState.position,
+            distance: gameState.totalDistance,
             maxSpeed: gameState.maxSpeed,
             elapsedTime: gameState.totalGameTime,
             crashes: gameState.crashes,
@@ -122,12 +99,13 @@ export async function initializeGameEngine(
       gameState.maxSpeed = 0;
       gameState.crashes = 0;
       gameState.totalGameTime = 0;
+      gameState.totalDistance = 0;
       gameState.playerX = 0;
     },
 
     getStats: (): GameStats => {
       return {
-        distance: gameState.position,
+        distance: gameState.totalDistance,
         maxSpeed: gameState.maxSpeed,
         elapsedTime: gameState.totalGameTime,
         crashes: gameState.crashes,

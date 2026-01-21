@@ -1,7 +1,7 @@
 "use client"
 
 import { Trophy, Medal, Award, Loader2, Crown, Flame } from "lucide-react"
-import { useEffect, useState, useRef } from "react"
+import { useEffect, useState } from "react"
 import { getCurrentDayId } from "@/lib/dayId"
 
 interface LeaderboardEntry {
@@ -100,30 +100,19 @@ export function LeaderboardTable() {
   const [error, setError] = useState<string | null>(null)
   const [isMounted, setIsMounted] = useState(false)
   const [isVisible, setIsVisible] = useState(false)
-  const sectionRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
     setIsMounted(true)
   }, [])
 
   useEffect(() => {
-    // Don't set up observer while loading
-    if (isLoading) return
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true)
-        }
-      },
-      { threshold: 0.1 }
-    )
-
-    if (sectionRef.current) {
-      observer.observe(sectionRef.current)
+    // Show content after loading completes with a small delay for animation
+    if (!isLoading) {
+      const timer = setTimeout(() => {
+        setIsVisible(true)
+      }, 50)
+      return () => clearTimeout(timer)
     }
-
-    return () => observer.disconnect()
   }, [isLoading])
 
   useEffect(() => {
@@ -206,7 +195,7 @@ export function LeaderboardTable() {
   }
 
   return (
-    <section ref={sectionRef} className="py-12">
+    <section className="py-12">
       <div className="container mx-auto max-w-6xl px-4">
         {isEmpty ? (
           <div

@@ -13,6 +13,7 @@
     maxSpeed: 0,
     crashes: 0,
     totalGameTime: 0,
+    totalDistance: 0,  // CRITICAL: Cumulative distance that never wraps (unlike position)
     playerX: 0,
     trackLength: 0,
     segmentLength: 200,
@@ -39,6 +40,7 @@
     speed: 0,
     maxSpeed: 0,
     totalGameTime: 0,
+    totalDistance: 0,  // Cumulative distance traveled (never wraps)
     playerX: 0,
     trackLength: null,
     segmentLength: 200,
@@ -160,7 +162,14 @@
 
       this.updateCars(dt, playerSegment, playerW);
 
-      this.position = window.Util.increase(this.position, dt * this.speed, this.trackLength);
+      // Calculate distance traveled this frame
+      var distanceThisFrame = dt * this.speed;
+
+      // Update position (wraps around track)
+      this.position = window.Util.increase(this.position, distanceThisFrame, this.trackLength);
+
+      // CRITICAL: Accumulate total distance (never wraps, always increases)
+      this.totalDistance = (this.totalDistance || 0) + distanceThisFrame;
 
       if (this.keyLeft)
         this.playerX = this.playerX - dx;
@@ -245,6 +254,7 @@
       }
       
       window.gameState.totalGameTime = this.totalGameTime;
+      window.gameState.totalDistance = this.totalDistance;  // Cumulative distance for scoring
       window.gameState.playerX = this.playerX;
       window.gameState.trackLength = this.trackLength || 0;
       window.gameState.segmentLength = this.segmentLength;
@@ -628,21 +638,23 @@
       this.speed = 0;
       this.playerX = 0;
       this.totalGameTime = 0;
+      this.totalDistance = 0;  // Reset cumulative distance
       this.currentLapTime = 0;
       this.skyOffset = 0;
       this.hillOffset = 0;
       this.treeOffset = 0;
       this.difficultyLevel = 1;
       this.totalCars = this.baseTotalCars;
-      
+
       window.gameState.position = 0;
       window.gameState.speed = 0;
       // Only reset maxSpeed when explicitly resetting (game stopped)
       window.gameState.maxSpeed = 0;
       window.gameState.crashes = 0;
       window.gameState.totalGameTime = 0;
+      window.gameState.totalDistance = 0;  // Reset cumulative distance
       window.gameState.playerX = 0;
-      
+
       this.resetGame({ keepDifficulty: false });
     }
   };

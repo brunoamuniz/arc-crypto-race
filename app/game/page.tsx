@@ -16,6 +16,8 @@ import { getCurrentDayId } from '@/lib/dayId';
 import { hasEntered } from '@/lib/contract';
 import { EnterTournamentButton } from '@/components/EnterTournamentButton';
 
+// Window types are declared in lib/types.ts
+
 const GAME_TIME_LIMIT = 300; // 5 minutes in seconds
 
 export default function GamePage() {
@@ -58,10 +60,39 @@ export default function GamePage() {
     }));
 
     // Submit score to backend ONLY if in tournament mode (not demo)
+    console.log('🎯 Game ended - checking submission conditions:', {
+      isDemoMode,
+      isConnected,
+      address: address ? `${address.slice(0, 6)}...${address.slice(-4)}` : 'undefined',
+      willSubmit: !isDemoMode && isConnected && !!address,
+    });
+
     if (!isDemoMode && isConnected && address) {
-      const finalScore = calculateScore(stats);
+      // CRITICAL: Read directly from window.gameState to avoid race condition
+      // React state might not have the latest values yet when this is called
+      const gameState = window.gameState;
+      const finalStats: GameStats = gameState ? {
+        // Use totalDistance (cumulative) instead of position (wraps around)
+        distance: gameState.totalDistance ?? gameState.position,
+        maxSpeed: gameState.maxSpeed,
+        elapsedTime: gameState.totalGameTime,
+        crashes: gameState.crashes,
+        currentSpeed: gameState.speed,
+        position: gameState.position,
+      } : stats;
+
+      // Also use React state to get the protected maxSpeed/distance (whichever is higher)
+      const protectedStats: GameStats = {
+        ...finalStats,
+        maxSpeed: Math.max(finalStats.maxSpeed, stats.maxSpeed),
+        distance: Math.max(finalStats.distance, stats.distance),
+      };
+
+      const finalScore = calculateScore(protectedStats);
       const dayId = getCurrentDayId();
-      
+
+      console.log('📊 Submitting score:', { finalScore, protectedStats, gameState: finalStats, reactState: stats });
+
       try {
         const response = await fetch('/api/submit-score', {
           method: 'POST',
@@ -247,12 +278,17 @@ export default function GamePage() {
     // Keep demo mode if it was active
   };
 
-  const handleStatsUpdate = (newStats: GameStats) => {
+  // CRITICAL: Memoize to prevent stats polling interval from resetting on every render
+  const handleStatsUpdate = useCallback((newStats: GameStats) => {
     setStats(prev => ({
       ...newStats,
-      maxSpeed: Math.max(prev.maxSpeed, newStats.currentSpeed),
+      // CRITICAL: Prevent score drops by protecting key values
+      // maxSpeed should only increase
+      maxSpeed: Math.max(prev.maxSpeed, newStats.maxSpeed, newStats.currentSpeed),
+      // distance should only increase during gameplay
+      distance: Math.max(prev.distance, newStats.distance),
     }));
-  };
+  }, []);
 
   const handleStopPlaying = () => {
     // Stop the game and save the current score
